@@ -1,0 +1,21 @@
+# 产物 / outputs
+outputs/
+*.wav
+*.mp3
+*.flac
+
+# 模型权重 / model weights（体积大，从 GitHub release 下载，见 docs/05_deployment.md）
+models/
+!models/.gitkeep
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+.ruff_cache/
+
+# 密钥 / secrets
+.env

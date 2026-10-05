@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-separate"
+version = "0.1.0"
+description = "可插拔的本地声音分离服务插件：人声提取 / 背景音提取 / 主体人声去除"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+
+# ── 依赖为什么这么少 ────────────────────────────────────────────────────
+# 分离全部走 **sherpa-onnx 自带的 OfflineSourceSeparation**（UVR MDX 系 onnx），
+# 所以既不需要 torch，也不需要 demucs：
+#   · 实测本机 CPU 上 RTF 0.23~0.36，比 demucs 在 GPU 上还快（0.74）；
+#   · 显存占用为 0（8 GB 卡整块留给别的模块）；
+#   · 模型只有 28~67 MB。
+# `pip install sherpa-onnx` 只新增 2 个包。
+dependencies = [
+    "numpy>=1.26",
+    "soundfile>=0.12",
+    "PyYAML>=6.0",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.4",
+    "typer>=0.12",
+    "rich>=13.0",
+
+    "sherpa-onnx>=1.13",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.115", "uvicorn>=0.30", "python-multipart>=0.0.9"]
+gui = ["nicegui>=2.0"]
+dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
+all = ["agentic-separate[server,gui,dev]"]
+
+[project.scripts]
+separate = "agentic_separate.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["agentic_separate*"]
+
+[tool.pytest.ini_options]
+# 默认只跑离线用例；真实模型用例手动跑：python -m pytest tests -q -m real
+addopts = "-m 'not real'"
+markers = [
+    "real: 需要真实 sherpa-onnx UVR 权重的用例（手动触发）",
+]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
