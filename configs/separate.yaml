@@ -1,0 +1,35 @@
+# Agentic_VoiceSeparate_Module —— 配置 / configuration
+#
+# 优先级 / priority: 进程环境变量 > .env > 本文件 > 代码内置默认值
+
+engine:
+  # uvr = sherpa-onnx 的 UVR MDX 系 onnx（CPU，实测 RTF 0.23~0.36，零显存）
+  # null = 零依赖占位，输出确定性结果，用于离线跑通链路与测试
+  default: uvr
+  uvr:
+    model_dir: models/sherpa-separation
+    num_threads: 4
+    provider: cpu
+    # null = 运行时按 **VAD 语音占比** 自动判定哪条轨是主体人声
+    # 显式给 0 或 1 可强制指定（判定方向错了会把「去掉主体人声」做成「去掉背景人声」）
+    lead_stem_index: null
+
+mode: lead_removal            # lead_removal | vocals | accompaniment | both
+
+# 各模式用哪个权重 / which weight each mode loads
+#   lead_removal  → KARA 系：去主唱、留伴唱（实测在说话场景同样有效）
+#   vocals        → 人声专用：要所有人声
+#   accompaniment → 伴奏专用：去掉所有人声
+models:
+  lead_removal: UVR_MDXNET_KARA.onnx
+  vocals: UVR-MDX-NET-Voc_FT.onnx
+  accompaniment: UVR-MDX-NET-Inst_Main.onnx
+
+# 分离模型固定工作在 44.1 kHz 立体声
+output_sample_rate: 44100
+# 不做逐轨峰值归一化：会破坏轨间相对音量，让两条轨再也混不回原样
+normalize: false
+
+server:
+  host: 127.0.0.1
+  port: 8302
