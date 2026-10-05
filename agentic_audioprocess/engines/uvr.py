@@ -27,10 +27,10 @@ from typing import Any
 
 import numpy as np
 
-from agentic_separate.core.errors import EngineError, ModelMissingError
-from agentic_separate.core.logging import get_logger
-from agentic_separate.core.types import AudioChunk, SeparationMode
-from agentic_separate.engines.base import ACCOMPANIMENT, VOCALS, SeparationEngine
+from agentic_audioprocess.core.errors import EngineError, ModelMissingError
+from agentic_audioprocess.core.logging import get_logger
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode
+from agentic_audioprocess.engines.base import ACCOMPANIMENT, VOCALS, SeparationEngine
 
 log = get_logger("engines.uvr")
 

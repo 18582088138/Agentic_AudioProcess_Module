@@ -4,12 +4,10 @@
 An engine does exactly one thing: audio in, a dict of stems out.
 
 轨道命名、落盘、等长校验、轨道顺序判定、业务模式（人声 / 背景音 / 去主体人声）
-全部在门面 `SeparateModule` 里 —— 与 `Agentic_ASR_Module` 的引擎抽象同样的取舍：
-把这些下沉到各引擎，就会出现 N 份互相不一致的实现。
+全部在门面 `AudioProcessModule` 里 —— 下沉到各引擎，就会出现 N 份互相不一致的实现。
 
-为什么与 ASR 引擎**分成两套平级抽象**：两者能力正交 ——
-一个答「这段音频里哪些是人声」，一个答「这段音频说了什么」。
-硬合并会让能力表无法表达（云端 ASR 能做转写但做不了分离，分离模型能分轨但不认识字）。
+**引擎之间是平级的**：一个答「这段音频里哪些是人声」，另一个可能答「这段音频说了什么」，
+能力正交。硬合并成一张能力表反而表达不了（有的模型能做 A 做不了 B）。
 """
 
 from __future__ import annotations
@@ -19,10 +17,10 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from agentic_separate.core.types import AudioChunk, SeparationMode
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode
 
 if TYPE_CHECKING:  # pragma: no cover
-    from agentic_separate.core.config import SeparateConfig
+    from agentic_audioprocess.core.config import AudioProcessConfig
 
 # 轨的规范名 / canonical stem names
 VOCALS = "vocals"
@@ -42,7 +40,7 @@ class SeparationEngine(ABC):
     name: str = ""
     implemented: bool = True
 
-    def __init__(self, config: "SeparateConfig | None" = None) -> None:
+    def __init__(self, config: "AudioProcessConfig | None" = None) -> None:
         self.config = config
         self.loaded = False
 
@@ -65,10 +63,10 @@ class SeparationEngine(ABC):
     def require(self, mode: SeparationMode) -> None:
         """不支持就报错，绝不静默降级 / fail loudly instead of degrading."""
         if not self.supports(mode):
-            from agentic_separate.core.errors import SeparateError
+            from agentic_audioprocess.core.errors import AudioProcessError
 
             supported = "、".join(sorted(m.value for m in self.modes())) or "（无）"
-            raise SeparateError(f"引擎 {self.name!r} 不支持模式 {mode.value}　"
+            raise AudioProcessError(f"引擎 {self.name!r} 不支持模式 {mode.value}　"
                                 f"已支持 / supported: {supported}")
 
     # ── 分离 / separation ───────────────────────────────────────────────────

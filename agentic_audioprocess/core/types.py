@@ -1,7 +1,7 @@
 """跨层数据类型 / Cross-layer data types.
 
 引擎只负责「一段音频 → 若干条轨」，其余（格式归一、等长校验、轨道顺序判定、
-落盘与命名）全部由门面 `SeparateModule` 负责。
+落盘与命名）全部由门面 `AudioProcessModule` 负责。
 Engines only turn audio into stems; everything else lives in the facade.
 """
 
@@ -81,8 +81,8 @@ class SeparationResult:
 class AudioChunk:
     """已归一的一段音频 / a normalised piece of audio.
 
-    分离模型要求 **44.1 kHz 立体声**，所以这里的默认值与 ASR 侧（16 kHz 单声道）不同。
-    Separation models want 44.1 kHz stereo, unlike the ASR side.
+    分离模型要求 **44.1 kHz 立体声**，所以默认值不是语音识别常用的 16 kHz 单声道。
+    Separation models want 44.1 kHz stereo, not the 16 kHz mono used by speech tasks.
     """
 
     samples: np.ndarray            # float32, 形状 (num_samples,) 或 (num_samples, ch)

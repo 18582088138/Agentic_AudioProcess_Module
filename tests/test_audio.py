@@ -15,9 +15,9 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from agentic_separate.audio.io import SEPARATION_SR, decode, read_wav, write_wav
-from agentic_separate.audio.vad import SpeechRatioDetector
-from agentic_separate.core.errors import DecodeError
+from agentic_audioprocess.audio.io import SEPARATION_SR, decode, read_wav, write_wav
+from agentic_audioprocess.audio.vad import SpeechRatioDetector
+from agentic_audioprocess.core.errors import DecodeError
 
 
 def test_decode_to_44k_stereo(voice_over_music_wav: Path) -> None:
@@ -65,7 +65,7 @@ def test_energy_backend_reports_ratio() -> None:
 
 def test_silero_backend_detects_voice(voice_over_music_wav: Path) -> None:
     """真实 Silero 路径：素材里 2/3 是语音，占比应明显偏高。"""
-    from agentic_separate.core.config import ROOT
+    from agentic_audioprocess.core.config import ROOT
 
     model = ROOT / "models" / "sherpa-vad" / "silero_vad.onnx"
     if not model.is_file():

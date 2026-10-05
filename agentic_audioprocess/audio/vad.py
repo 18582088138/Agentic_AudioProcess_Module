@@ -4,7 +4,7 @@
 这是本插件最容易出错、后果最难发现的一步（判反了就把「去掉主体人声」做成了
 「去掉背景人声」）。
 
-⚠️ 两条从 ASR 插件那边继承来的教训，直接抄在这里（`Agentic_ASR_Module/docs/issues/003`）：
+⚠️ 两条踩过的坑，直接写在这里：
 
 1. Silero VAD **必须分块喂**：整段一次性 `accept_waveform` 会严重漏检
    （同一段 5.6 s 人声，整段喂只报 0.31 s，分块喂报 4.39 s）；
@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from agentic_separate.core.logging import get_logger
+from agentic_audioprocess.core.logging import get_logger
 
 log = get_logger("audio.vad")
 

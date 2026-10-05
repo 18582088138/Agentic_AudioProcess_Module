@@ -63,17 +63,17 @@ def music_only_wav(tmp_path_factory: pytest.TempPathFactory) -> Path:
 @pytest.fixture()
 def module(tmp_path: Path):
     """用 null 引擎、输出到临时目录的门面 / facade on the placeholder engine."""
-    from agentic_separate.core.config import load_config
-    from agentic_separate.separate import SeparateModule
+    from agentic_audioprocess.audioprocess import AudioProcessModule
+    from agentic_audioprocess.core.config import load_config
 
     cfg = load_config(None)
     cfg.output_dir = tmp_path / "outputs"
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
-    return SeparateModule(cfg, engine="null")
+    return AudioProcessModule(cfg, engine="null")
 
 
 @pytest.fixture(scope="session")
 def uvr_models_dir() -> Path:
-    from agentic_separate.core.config import ROOT
+    from agentic_audioprocess.core.config import ROOT
 
     return ROOT / "models" / "sherpa-separation"

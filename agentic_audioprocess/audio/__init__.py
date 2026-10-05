@@ -1,6 +1,6 @@
 """音频层 / Audio layer —— 解码归一、写盘、轨道判定用的语音占比."""
 
-from agentic_separate.audio.io import (
+from agentic_audioprocess.audio.io import (
     SEPARATION_CH,
     SEPARATION_SR,
     decode,
@@ -11,7 +11,7 @@ from agentic_separate.audio.io import (
     to_wav_file,
     write_wav,
 )
-from agentic_separate.audio.vad import SpeechRatioDetector
+from agentic_audioprocess.audio.vad import SpeechRatioDetector
 
 __all__ = [
     "SEPARATION_CH",

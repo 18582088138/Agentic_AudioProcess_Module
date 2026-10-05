@@ -2,7 +2,7 @@
 
 sherpa-onnx 的 UVR 分离模型**只接受 wav、且要求 44.1 kHz 立体声**（官方：
 `ffmpeg -i in.mp4 -vn -acodec pcm_s16le -ar 44100 -ac 2 out.wav`）。
-所以本模块的解码出口与 ASR 侧（16 kHz 单声道）不同。
+所以本模块的解码出口是 44.1 kHz 立体声，而不是语音识别常用的 16 kHz 单声道。
 
 另外实测一条硬约束：**各轨输出与输入严格等长**（`shape[1]` 完全一致）。
 本模块仍在门面做样本数校验 —— 时间轴漂移是最难查的一类静默 bug。
@@ -18,9 +18,9 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-from agentic_separate.core.errors import DecodeError
-from agentic_separate.core.logging import get_logger
-from agentic_separate.core.types import AudioChunk
+from agentic_audioprocess.core.errors import DecodeError
+from agentic_audioprocess.core.logging import get_logger
+from agentic_audioprocess.core.types import AudioChunk
 
 log = get_logger("audio.io")
 

@@ -9,11 +9,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable
 
-from agentic_separate import __version__
-from agentic_separate.core.config import SeparateConfig, load_config
-from agentic_separate.core.errors import SeparateError
-from agentic_separate.core.types import SeparationMode
-from agentic_separate.separate import SeparateModule
+from agentic_audioprocess import __version__
+from agentic_audioprocess.audioprocess import AudioProcessModule
+from agentic_audioprocess.core.config import AudioProcessConfig, load_config
+from agentic_audioprocess.core.errors import AudioProcessError
+from agentic_audioprocess.core.types import SeparationMode
 
 _MODE_LABEL = {
     SeparationMode.VOCALS: "① 人声提取（要所有人声）",
@@ -36,24 +36,25 @@ async def save_upload(file: Any, dest_dir: str | Path) -> Path:
     return dest
 
 
-def build_ui(config: SeparateConfig | None = None) -> SeparateModule:
+def build_ui(config: AudioProcessConfig | None = None) -> AudioProcessModule:
     """搭出界面并返回门面 / build the page and return the facade."""
-    from nicegui import events, run as nice_run, ui
+    from nicegui import events, ui
+    from nicegui import run as nice_run
 
     cfg = config or load_config()
-    module = SeparateModule(cfg)
+    module = AudioProcessModule(cfg)
     state: dict[str, Any] = {"path": ""}
 
     async def call(fn: Callable[..., Any], *args: Any, **kwargs: Any):
         try:
             return True, await nice_run.io_bound(fn, *args, **kwargs)
-        except SeparateError as exc:
+        except AudioProcessError as exc:
             return False, str(exc)
         except Exception as exc:  # noqa: BLE001
             return False, f"{type(exc).__name__}: {exc}"
 
     with ui.header().classes("items-center justify-between q-px-md"):
-        ui.label(f"Agentic VoiceSeparate  {__version__}").classes("text-h6")
+        ui.label(f"Agentic AudioProcess  {__version__}").classes("text-h6")
         engine_select = ui.select({e["name"]: e["name"] for e in module.engines()},
                                   value=cfg.engine.default,
                                   label="引擎 / engine").props("dense outlined").classes("w-40")
@@ -147,7 +148,7 @@ def run(host: str = "127.0.0.1", port: int = 8402, config: str | None = None) ->
     from nicegui import ui
 
     build_ui(load_config(config))
-    ui.run(host=host, port=port, title="Agentic VoiceSeparate", reload=False, show=True)
+    ui.run(host=host, port=port, title="Agentic AudioProcess", reload=False, show=True)
 
 
 __all__ = ["build_ui", "run"]

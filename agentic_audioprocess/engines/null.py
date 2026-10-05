@@ -12,8 +12,14 @@ from typing import Any
 
 import numpy as np
 
-from agentic_separate.core.types import AudioChunk, SeparationMode
-from agentic_separate.engines.base import ACCOMPANIMENT, BACKGROUND, LEAD, VOCALS, SeparationEngine
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode
+from agentic_audioprocess.engines.base import (
+    ACCOMPANIMENT,
+    BACKGROUND,
+    LEAD,
+    VOCALS,
+    SeparationEngine,
+)
 
 
 class NullEngine(SeparationEngine):

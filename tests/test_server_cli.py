@@ -15,11 +15,11 @@ from pathlib import Path
 
 import pytest
 
-from agentic_separate.core.config import load_config
+from agentic_audioprocess.core.config import load_config
 
 
 def _run_cli(*args: str, timeout: int = 300) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([sys.executable, "-m", "agentic_separate.cli", *args],
+    return subprocess.run([sys.executable, "-m", "agentic_audioprocess.cli", *args],
                           capture_output=True, text=True, encoding="utf-8",
                           errors="replace", timeout=timeout)
 
@@ -27,7 +27,7 @@ def _run_cli(*args: str, timeout: int = 300) -> subprocess.CompletedProcess[str]
 def test_cli_version() -> None:
     proc = _run_cli("version")
     assert proc.returncode == 0
-    assert "agentic-separate" in proc.stdout
+    assert "agentic-audioprocess" in proc.stdout
 
 
 def test_cli_engines() -> None:
@@ -69,7 +69,7 @@ def client(tmp_path: Path):
     pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
 
-    from agentic_separate.server.app import create_app
+    from agentic_audioprocess.server.app import create_app
 
     cfg = load_config(None)
     cfg.engine.default = "null"

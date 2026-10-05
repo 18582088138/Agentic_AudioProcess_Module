@@ -1,7 +1,6 @@
 """日志 / Logging.
 
-与 `Agentic_ASR_Module` 同样的形状；日志里不出现路径以外的敏感信息
-（本插件本来也不持有凭证）。
+日志里不出现路径以外的敏感信息（本模组本来也不持有凭证）。
 """
 
 from __future__ import annotations
@@ -10,7 +9,7 @@ import logging
 import os
 import sys
 
-_LOGGER_NAME = "agentic_separate"
+_LOGGER_NAME = "agentic_audioprocess"
 _configured = False
 
 
@@ -18,7 +17,7 @@ def _configure() -> None:
     global _configured
     if _configured:
         return
-    level = os.environ.get("SEPARATE_LOG_LEVEL", "INFO").upper()
+    level = os.environ.get("AUDIOPROCESS_LOG_LEVEL", "INFO").upper()
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(logging.Formatter(
         "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s", datefmt="%H:%M:%S"))

@@ -1,12 +1,12 @@
 """命令行 / Command line interface.
 
-    separate doctor                        # 体检
-    separate engines                       # 引擎与模式
-    separate vocals        <media>         # 人声提取
-    separate accompaniment <media>         # 背景音提取
-    separate lead-removal  <media>         # 主体人声去除
-    separate run           <media> --mode both
-    separate serve / separate gui
+    audio doctor                        # 体检
+    audio engines                       # 引擎与模式
+    audio vocals        <media>         # 人声提取
+    audio accompaniment <media>         # 背景音提取
+    audio lead-removal  <media>         # 主体人声去除
+    audio run           <media> --mode both
+    audio serve / audio gui
 """
 
 from __future__ import annotations
@@ -18,19 +18,19 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from agentic_separate import __version__
-from agentic_separate.core.config import load_config
-from agentic_separate.core.errors import SeparateError
-from agentic_separate.core.types import SeparationMode
-from agentic_separate.separate import SeparateModule
+from agentic_audioprocess import __version__
+from agentic_audioprocess.audioprocess import AudioProcessModule
+from agentic_audioprocess.core.config import load_config
+from agentic_audioprocess.core.errors import AudioProcessError
+from agentic_audioprocess.core.types import SeparationMode
 
 app = typer.Typer(add_completion=False, no_args_is_help=True,
-                  help="Agentic_VoiceSeparate_Module —— 本地声音分离插件")
+                  help="Agentic_AudioProcess_Module —— 本地音频处理插件")
 console = Console()
 
 
-def _module(engine: str | None = None, config: str | None = None) -> SeparateModule:
-    return SeparateModule(config=load_config(config), engine=engine)
+def _module(engine: str | None = None, config: str | None = None) -> AudioProcessModule:
+    return AudioProcessModule(config=load_config(config), engine=engine)
 
 
 def _fail(exc: Exception) -> None:
@@ -59,7 +59,7 @@ def _run(mode: SeparationMode, media: Path, out_dir: Path | None, engine: str | 
          config: str | None) -> None:
     try:
         result = _module(engine, config).separate(media, mode, out_dir, engine)
-    except SeparateError as exc:
+    except AudioProcessError as exc:
         _fail(exc)
         return
     _show(result)
@@ -68,7 +68,7 @@ def _run(mode: SeparationMode, media: Path, out_dir: Path | None, engine: str | 
 @app.command()
 def version() -> None:
     """打印版本 / print the version."""
-    console.print(f"agentic-separate {__version__}")
+    console.print(f"agentic-audioprocess {__version__}")
 
 
 @app.command()
@@ -116,7 +116,7 @@ def lead_removal(media: Path, out_dir: Path = typer.Option(None, "--out-dir"),
         if lead_index is not None:
             module.config.engine.uvr.lead_stem_index = lead_index
         result = module.separate(media, SeparationMode.LEAD_REMOVAL, out_dir, engine)
-    except SeparateError as exc:
+    except AudioProcessError as exc:
         _fail(exc)
         return
     _show(result)
@@ -130,7 +130,7 @@ def run(media: Path, mode: str = typer.Option("both", "--mode"),
     try:
         mode_enum = SeparationMode(mode.lower())
     except ValueError:
-        _fail(SeparateError(f"未知模式 / unknown mode: {mode}"))
+        _fail(AudioProcessError(f"未知模式 / unknown mode: {mode}"))
         return
     _run(mode_enum, media, out_dir, engine, config)
 
@@ -139,7 +139,7 @@ def run(media: Path, mode: str = typer.Option("both", "--mode"),
 def serve(host: str = typer.Option(None), port: int = typer.Option(None),
           config: str = typer.Option(None, "--config")) -> None:
     """起 HTTP 服务 / run the HTTP service."""
-    from agentic_separate.server.app import run as serve_run
+    from agentic_audioprocess.server.app import run as serve_run
 
     cfg = load_config(config)
     serve_run(host or cfg.server.host, port or cfg.server.port, config=config)
@@ -149,7 +149,7 @@ def serve(host: str = typer.Option(None), port: int = typer.Option(None),
 def gui(host: str = typer.Option(None), port: int = typer.Option(None),
         config: str = typer.Option(None, "--config")) -> None:
     """起图形界面 / launch the GUI."""
-    from agentic_separate.gui.app import run as gui_run
+    from agentic_audioprocess.gui.app import run as gui_run
 
     cfg = load_config(config)
     gui_run(host or cfg.server.host, port or (cfg.server.port + 100), config=config)

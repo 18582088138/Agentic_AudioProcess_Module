@@ -1,15 +1,15 @@
 """核心层 / Core layer —— 配置、类型、异常、日志."""
 
-from agentic_separate.core.errors import (
+from agentic_audioprocess.core.errors import (
+    AudioProcessError,
     ConfigError,
     DecodeError,
     EngineError,
     ModelMissingError,
-    SeparateError,
     StemOrderError,
 )
-from agentic_separate.core.logging import get_logger
-from agentic_separate.core.types import (
+from agentic_audioprocess.core.logging import get_logger
+from agentic_audioprocess.core.types import (
     AudioChunk,
     SeparationMode,
     SeparationResult,
@@ -22,7 +22,7 @@ __all__ = [
     "DecodeError",
     "EngineError",
     "ModelMissingError",
-    "SeparateError",
+    "AudioProcessError",
     "SeparationMode",
     "SeparationResult",
     "Stem",

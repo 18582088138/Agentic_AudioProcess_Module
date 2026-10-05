@@ -1,6 +1,6 @@
 """配置 / Configuration.
 
-单一 YAML（`configs/separate.yaml`）+ 环境变量覆盖，优先级：
+单一 YAML（`configs/audioprocess.yaml`）+ 环境变量覆盖，优先级：
 **进程环境变量 > `.env` > YAML > 内置默认值**。
 """
 
@@ -13,10 +13,10 @@ import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from agentic_separate.core.errors import ConfigError
+from agentic_audioprocess.core.errors import ConfigError
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_CONFIG = ROOT / "configs" / "separate.yaml"
+DEFAULT_CONFIG = ROOT / "configs" / "audioprocess.yaml"
 
 # 业务模式 -> 用哪个模型 / mode -> which weight file to load
 # 这三行是本插件的核心知识：**去主体人声必须用 KARA 系**，
@@ -34,13 +34,13 @@ class Secrets(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(ROOT / ".env"), env_file_encoding="utf-8", extra="ignore")
 
-    separate_engine: str = ""
-    separate_mode: str = ""
-    separate_models_dir: str = ""
-    separate_output_dir: str = ""
-    separate_num_threads: int = 0
-    separate_server_host: str = ""
-    separate_server_port: int = 0
+    audioprocess_engine: str = ""
+    audioprocess_mode: str = ""
+    audioprocess_models_dir: str = ""
+    audioprocess_output_dir: str = ""
+    audioprocess_num_threads: int = 0
+    audioprocess_server_host: str = ""
+    audioprocess_server_port: int = 0
 
 
 class UvrConfig(BaseModel):
@@ -63,7 +63,7 @@ class ServerConfig(BaseModel):
     port: int = 8302
 
 
-class SeparateConfig(BaseModel):
+class AudioProcessConfig(BaseModel):
     """顶层配置 / top-level configuration."""
 
     engine: EngineConfig = Field(default_factory=EngineConfig)
@@ -98,7 +98,7 @@ def _deep_merge(base: dict[str, Any], over: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def load_config(path: str | Path | None = None, **overrides: Any) -> SeparateConfig:
+def load_config(path: str | Path | None = None, **overrides: Any) -> AudioProcessConfig:
     """加载配置 / load configuration.
 
     抛出 / Raises:
@@ -116,29 +116,29 @@ def load_config(path: str | Path | None = None, **overrides: Any) -> SeparateCon
         data = loaded
 
     secrets = Secrets()
-    if secrets.separate_engine:
-        data = _deep_merge(data, {"engine": {"default": secrets.separate_engine}})
-    if secrets.separate_mode:
-        data = _deep_merge(data, {"mode": secrets.separate_mode})
-    if secrets.separate_models_dir:
-        data = _deep_merge(data, {"engine": {"uvr": {"model_dir": secrets.separate_models_dir}}})
-    if secrets.separate_output_dir:
-        data = _deep_merge(data, {"output_dir": secrets.separate_output_dir})
-    if secrets.separate_num_threads:
-        data = _deep_merge(data, {"engine": {"uvr": {"num_threads": secrets.separate_num_threads}}})
-    if secrets.separate_server_host:
-        data = _deep_merge(data, {"server": {"host": secrets.separate_server_host}})
-    if secrets.separate_server_port:
-        data = _deep_merge(data, {"server": {"port": int(secrets.separate_server_port)}})
+    if secrets.audioprocess_engine:
+        data = _deep_merge(data, {"engine": {"default": secrets.audioprocess_engine}})
+    if secrets.audioprocess_mode:
+        data = _deep_merge(data, {"mode": secrets.audioprocess_mode})
+    if secrets.audioprocess_models_dir:
+        data = _deep_merge(data, {"engine": {"uvr": {"model_dir": secrets.audioprocess_models_dir}}})
+    if secrets.audioprocess_output_dir:
+        data = _deep_merge(data, {"output_dir": secrets.audioprocess_output_dir})
+    if secrets.audioprocess_num_threads:
+        data = _deep_merge(data, {"engine": {"uvr": {"num_threads": secrets.audioprocess_num_threads}}})
+    if secrets.audioprocess_server_host:
+        data = _deep_merge(data, {"server": {"host": secrets.audioprocess_server_host}})
+    if secrets.audioprocess_server_port:
+        data = _deep_merge(data, {"server": {"port": int(secrets.audioprocess_server_port)}})
     if overrides:
         data = _deep_merge(data, overrides)
 
     try:
-        cfg = SeparateConfig(**data)
+        cfg = AudioProcessConfig(**data)
     except Exception as exc:
         raise ConfigError(f"配置字段非法 / invalid config: {exc}") from exc
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
     return cfg
 
 
-__all__ = ["DEFAULT_MODE_MODELS", "ROOT", "SeparateConfig", "Secrets", "load_config"]
+__all__ = ["DEFAULT_MODE_MODELS", "ROOT", "AudioProcessConfig", "Secrets", "load_config"]

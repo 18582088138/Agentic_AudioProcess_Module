@@ -16,8 +16,8 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from agentic_separate.core.types import SeparationMode
-from agentic_separate.separate import SeparateModule
+from agentic_audioprocess.audioprocess import AudioProcessModule
+from agentic_audioprocess.core.types import SeparationMode
 
 pytestmark = pytest.mark.real
 
@@ -32,7 +32,7 @@ def _need(name: str) -> None:
 @pytest.fixture(scope="module")
 def uvr_module():
     _need("UVR_MDXNET_KARA.onnx")
-    module = SeparateModule()
+    module = AudioProcessModule()
     yield module
     module.release()
 
@@ -69,7 +69,7 @@ def lead_vs_background(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return path
 
 
-def test_uvr_lead_removal_runs(uvr_module: SeparateModule,
+def test_uvr_lead_removal_runs(uvr_module: AudioProcessModule,
                                voice_over_music_wav: Path) -> None:
     """核心路径：KARA 模型能跑通，并给出 background 与 lead 两条轨。"""
     result = uvr_module.remove_lead_vocal(voice_over_music_wav)
@@ -78,7 +78,7 @@ def test_uvr_lead_removal_runs(uvr_module: SeparateModule,
     assert result.stem_order_resolved_by
 
 
-def test_uvr_stems_match_input_length(uvr_module: SeparateModule,
+def test_uvr_stems_match_input_length(uvr_module: AudioProcessModule,
                                       voice_over_music_wav: Path) -> None:
     """V9：真实模型下各轨也必须与输入严格等长。"""
     chunk = uvr_module._load(voice_over_music_wav)
@@ -88,7 +88,7 @@ def test_uvr_stems_match_input_length(uvr_module: SeparateModule,
         assert len(data) == len(chunk.samples), f"{stem.name} 与输入不等长"
 
 
-def test_kara_separates_lead_from_background(uvr_module: SeparateModule,
+def test_kara_separates_lead_from_background(uvr_module: AudioProcessModule,
                                              lead_vs_background: Path) -> None:
     """**本插件最核心的实测断言**：KARA 真的能把主体人声与背景人声分开。
 
@@ -119,7 +119,7 @@ def test_kara_separates_lead_from_background(uvr_module: SeparateModule,
         assert max(ratios.values()) >= min(ratios.values())
 
 
-def test_all_three_modes_run(uvr_module: SeparateModule,
+def test_all_three_modes_run(uvr_module: AudioProcessModule,
                              voice_over_music_wav: Path) -> None:
     for mode, weight in ((SeparationMode.VOCALS, "UVR-MDX-NET-Voc_FT.onnx"),
                          (SeparationMode.ACCOMPANIMENT, "UVR-MDX-NET-Inst_Main.onnx")):
@@ -128,7 +128,7 @@ def test_all_three_modes_run(uvr_module: SeparateModule,
         assert result.stems, f"{mode} 没有产出轨"
 
 
-def test_music_only_does_not_crash(uvr_module: SeparateModule,
+def test_music_only_does_not_crash(uvr_module: AudioProcessModule,
                                    music_only_wav: Path) -> None:
     """纯音乐也要能正常出结果（只是没有主体人声可去）。"""
     result = uvr_module.separate(music_only_wav, SeparationMode.LEAD_REMOVAL)

@@ -15,18 +15,17 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from agentic_separate.core.config import SeparateConfig, load_config
-from agentic_separate.core.errors import ConfigError, SeparateError
-from agentic_separate.core.types import AudioChunk, SeparationMode
-from agentic_separate.engines import available, resolve
-from agentic_separate.engines.base import (
+from agentic_audioprocess.core.config import AudioProcessConfig, load_config
+from agentic_audioprocess.core.errors import AudioProcessError, ConfigError
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode
+from agentic_audioprocess.engines import available, resolve
+from agentic_audioprocess.engines.base import (
     ACCOMPANIMENT,
     BACKGROUND,
     LEAD,
     VOCALS,
     SeparationEngine,
 )
-
 
 # ── 配置与注册表 / config & registry ─────────────────────────────────────────
 
@@ -39,7 +38,7 @@ def test_default_config_is_runnable() -> None:
 
 def test_mode_to_model_mapping() -> None:
     """三个模式必须映射到**不同**的权重 —— 这正是本插件存在的理由。"""
-    cfg = SeparateConfig()
+    cfg = AudioProcessConfig()
     assert cfg.model_for("lead_removal").startswith("UVR_MDXNET_KARA")
     assert cfg.model_for("vocals") == "UVR-MDX-NET-Voc_FT.onnx"
     assert cfg.model_for("accompaniment") == "UVR-MDX-NET-Inst_Main.onnx"
@@ -59,7 +58,7 @@ def test_unknown_engine_raises() -> None:
 
 
 def test_require_rejects_unsupported_mode() -> None:
-    from agentic_separate.engines.null import NullEngine
+    from agentic_audioprocess.engines.null import NullEngine
 
     class Narrow(NullEngine):
         name = "narrow"
@@ -68,9 +67,9 @@ def test_require_rejects_unsupported_mode() -> None:
         def declared_modes(cls):
             return {SeparationMode.VOCALS}
 
-    eng = Narrow(SeparateConfig())
+    eng = Narrow(AudioProcessConfig())
     eng.require(SeparationMode.VOCALS)
-    with pytest.raises(SeparateError):
+    with pytest.raises(AudioProcessError):
         eng.require(SeparationMode.LEAD_REMOVAL)
 
 
@@ -117,7 +116,7 @@ def test_model_convention_wins_over_vad(module, voice_over_music_wav: Path) -> N
     含音乐的那条轨占比反而更高（0.914 > 0.7624），判定方向整个反了 ——
     「去掉主体人声」变成了「去掉背景人声」。见 `issues/005`。
     """
-    from agentic_separate.core.config import DEFAULT_MODE_MODELS
+    from agentic_audioprocess.core.config import DEFAULT_MODE_MODELS
 
     # 默认配置用的就是 KARA 模型，约定表里 stem0 = 主体
     assert module.config.model_for("lead_removal") == DEFAULT_MODE_MODELS["lead_removal"]
@@ -163,12 +162,12 @@ def test_output_files_are_named_by_mode(module, voice_over_music_wav: Path) -> N
 
 def test_empty_audio_raises(module) -> None:
     chunk = AudioChunk(samples=np.zeros((0, 2), dtype=np.float32), sample_rate=44100)
-    with pytest.raises(SeparateError):
+    with pytest.raises(AudioProcessError):
         module.separate(chunk, SeparationMode.VOCALS)
 
 
 def test_unknown_mode_raises(module, voice_over_music_wav: Path) -> None:
-    with pytest.raises(SeparateError):
+    with pytest.raises(AudioProcessError):
         module.separate(voice_over_music_wav, "not-a-mode")
 
 
@@ -201,10 +200,10 @@ def test_release_clears_engines(module) -> None:
 
 def test_engine_returns_same_shape(voice_over_music_wav: Path) -> None:
     """引擎契约：输出波形必须与输入同形（门面才有得裁剪）。"""
-    from agentic_separate.audio.io import decode
-    from agentic_separate.engines.null import NullEngine
+    from agentic_audioprocess.audio.io import decode
+    from agentic_audioprocess.engines.null import NullEngine
 
-    eng = NullEngine(SeparateConfig())
+    eng = NullEngine(AudioProcessConfig())
     chunk = decode(voice_over_music_wav)
     for mode in (SeparationMode.VOCALS, SeparationMode.ACCOMPANIMENT,
                  SeparationMode.BOTH, SeparationMode.LEAD_REMOVAL):

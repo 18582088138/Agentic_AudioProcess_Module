@@ -1,10 +1,10 @@
-"""GUI 上传路径 / GUI upload handling（分离插件侧）.
+"""GUI 上传路径 / GUI upload handling（音频处理插件侧）.
 
 复测 / rerun:
     C:\\Users\\75203\\miniforge3\\envs\\ov_env_py312\\python.exe -m pytest tests/test_gui.py -q
 
 覆盖 / covers: NiceGUI 3.x 的上传事件契约与文件名防目录穿越。
-说明文档 / docs: issues/005 所在仓库的 `docs/`（上传问题与 ASR 侧同一个根因）
+说明文档 / docs: docs/07_gui_guide.md
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ def _upload(name: str, data: bytes = b"RIFFfakewave"):
 
 
 def test_save_upload_writes_file(tmp_path: Path) -> None:
-    from agentic_separate.gui.app import save_upload
+    from agentic_audioprocess.gui.app import save_upload
 
     dest = asyncio.run(save_upload(_upload("demo.wav"), tmp_path))
     assert dest.is_file() and dest.name == "demo.wav"
@@ -32,7 +32,7 @@ def test_save_upload_writes_file(tmp_path: Path) -> None:
 
 
 def test_save_upload_strips_client_path(tmp_path: Path) -> None:
-    from agentic_separate.gui.app import save_upload
+    from agentic_audioprocess.gui.app import save_upload
 
     dest = asyncio.run(save_upload(_upload("../../evil.wav"), tmp_path))
     assert dest.parent == tmp_path and dest.name == "evil.wav"
@@ -54,7 +54,7 @@ def test_upload_event_arguments_shape() -> None:
 
 
 def test_gui_module_imports() -> None:
-    from agentic_separate.gui import app as gui_app
+    from agentic_audioprocess.gui import app as gui_app
 
     assert callable(gui_app.build_ui)
     assert callable(gui_app.run)

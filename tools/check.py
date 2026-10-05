@@ -56,7 +56,7 @@ def environment() -> bool:
         ok = False
 
     try:
-        from agentic_separate.core.config import load_config
+        from agentic_audioprocess.core.config import load_config
 
         cfg = load_config(None)
         for mode, fname in cfg.models.items():

@@ -1,4 +1,4 @@
-"""门面 / Facade —— `SeparateModule` 是唯一必须记住的类。
+"""门面 / Facade —— `AudioProcessModule` 是唯一必须记住的类。
 
 它负责**所有与引擎无关**的事 / everything engine-independent：
 
@@ -16,15 +16,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from agentic_separate.audio.io import decode, ffmpeg_available, write_wav
-from agentic_separate.audio.vad import SpeechRatioDetector
-from agentic_separate.core.config import SeparateConfig, load_config
-from agentic_separate.core.errors import SeparateError
-from agentic_separate.core.logging import get_logger
-from agentic_separate.core.types import AudioChunk, SeparationMode, SeparationResult, Stem
-from agentic_separate.engines import available as available_engines
-from agentic_separate.engines import resolve
-from agentic_separate.engines.base import (
+from agentic_audioprocess.audio.io import decode, ffmpeg_available, write_wav
+from agentic_audioprocess.audio.vad import SpeechRatioDetector
+from agentic_audioprocess.core.config import AudioProcessConfig, load_config
+from agentic_audioprocess.core.errors import AudioProcessError
+from agentic_audioprocess.core.logging import get_logger
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode, SeparationResult, Stem
+from agentic_audioprocess.engines import available as available_engines
+from agentic_audioprocess.engines import resolve
+from agentic_audioprocess.engines.base import (
     ACCOMPANIMENT,
     BACKGROUND,
     LEAD,
@@ -32,7 +32,7 @@ from agentic_separate.engines.base import (
     SeparationEngine,
 )
 
-log = get_logger("separate")
+log = get_logger("audioprocess")
 
 # 每个模式对外产出的轨名 / the stems each mode exposes
 _MODE_STEMS: dict[str, tuple[str, ...]] = {
@@ -52,10 +52,10 @@ _MODEL_LEAD_INDEX: dict[str, int] = {
 }
 
 
-class SeparateModule:
+class AudioProcessModule:
     """分离门面 / the separation facade."""
 
-    def __init__(self, config: SeparateConfig | None = None,
+    def __init__(self, config: AudioProcessConfig | None = None,
                  engine: str | SeparationEngine | None = None) -> None:
         self.config = config or load_config()
         self._engines: dict[str, SeparationEngine] = {}
@@ -84,7 +84,7 @@ class SeparateModule:
             try:
                 cls = resolve(name)
                 item["modes"] = sorted(m.value for m in cls.declared_modes())
-            except SeparateError as exc:
+            except AudioProcessError as exc:
                 item["error"] = str(exc)
                 item["modes"] = []
             out.append(item)
@@ -128,7 +128,7 @@ class SeparateModule:
         self._engines.clear()
         self._detector = None
 
-    def __enter__(self) -> "SeparateModule":
+    def __enter__(self) -> "AudioProcessModule":
         return self
 
     def __exit__(self, *exc: object) -> None:
@@ -179,7 +179,7 @@ class SeparateModule:
 
         chunk = self._load(media)
         if chunk.duration <= 0:
-            raise SeparateError("空音频 / empty audio")
+            raise AudioProcessError("空音频 / empty audio")
 
         raw = eng.separate(chunk, mode_enum,
                            lead_index=self.config.engine.uvr.lead_stem_index)
@@ -220,13 +220,13 @@ class SeparateModule:
         3. **VAD 语音占比** —— 仅用于约定表里没有的模型；
         4. **顺序兜底** —— 取第一条。
 
-        ⚠️ **为什么把 VAD 降到第三位**：跨插件联调时发现它会把**背景音乐误判成语音**。
+        ⚠️ **为什么把 VAD 降到第三位**：联调时发现它会把**背景音乐误判成语音**。
         实测素材「中文主体 + 英文背景 + 正弦背景音乐」：
 
             vad:speech_ratio {'vocals': 0.7624, 'accompaniment': 0.914}
 
         含音乐的那条轨占比反而更高（0.914），于是判定方向整个反了 ——
-        「去掉主体人声」变成了「去掉背景人声」。ASR 复核确认了这一点：
+        「去掉主体人声」变成了「去掉背景人声」。用语音识别复核确认了这一点：
         本该干净的 background 轨里仍能识别出中文主体。
 
         ⚠️ 也不许用**能量**：实测「人声 + 背景音乐」素材里音乐轨 rms（0.1533）
@@ -277,7 +277,7 @@ def _coerce_mode(mode: SeparationMode | str) -> SeparationMode:
         return SeparationMode(str(mode).lower().strip())
     except ValueError as exc:
         valid = "、".join(m.value for m in SeparationMode)
-        raise SeparateError(f"未知模式 / unknown mode {mode!r}　可用 / valid: {valid}") from exc
+        raise AudioProcessError(f"未知模式 / unknown mode {mode!r}　可用 / valid: {valid}") from exc
 
 
 def _enforce_same_length(raw: dict[str, Any], chunk: AudioChunk,
@@ -342,4 +342,4 @@ def _save_stems(stems: dict[str, Any], out_dir: Path, stem_name: str,
     return saved
 
 
-__all__ = ["SeparateModule"]
+__all__ = ["AudioProcessModule"]

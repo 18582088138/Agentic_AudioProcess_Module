@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "agentic-separate"
+name = "agentic-audioprocess"
 version = "0.1.0"
-description = "可插拔的本地声音分离服务插件：人声提取 / 背景音提取 / 主体人声去除"
+description = "可插拔的本地音频处理服务插件：分离（人声 / 背景音 / 主体人声去除）与前后处理（降噪 / 去环境音 / 音质优化）"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Proprietary" }
@@ -33,13 +33,13 @@ dependencies = [
 server = ["fastapi>=0.115", "uvicorn>=0.30", "python-multipart>=0.0.9"]
 gui = ["nicegui>=2.0"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.6"]
-all = ["agentic-separate[server,gui,dev]"]
+all = ["agentic-audioprocess[server,gui,dev]"]
 
 [project.scripts]
-separate = "agentic_separate.cli:main"
+audio = "agentic_audioprocess.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["agentic_separate*"]
+include = ["agentic_audioprocess*"]
 
 [tool.pytest.ini_options]
 # 默认只跑离线用例；真实模型用例手动跑：python -m pytest tests -q -m real

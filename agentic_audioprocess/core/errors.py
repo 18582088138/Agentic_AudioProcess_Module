@@ -1,26 +1,25 @@
 """异常体系 / Error hierarchy.
 
-与 `Agentic_ASR_Module` 保持同一形状（一个基类 + 若干语义明确的子类），
-这样两个插件在调用方眼里是对称的。
-Same shape as the ASR plugin, so callers see the two plugins as symmetric.
+一个基类 + 若干语义明确的子类，调用方只需要 catch 基类。
+A single base class plus semantically named subclasses, so callers can catch the base.
 """
 
 from __future__ import annotations
 
 
-class SeparateError(Exception):
+class AudioProcessError(Exception):
     """本插件所有异常的基类 / base class of every error in this plugin."""
 
 
-class ConfigError(SeparateError):
+class ConfigError(AudioProcessError):
     """配置缺失或非法 / missing or invalid configuration."""
 
 
-class DecodeError(SeparateError):
+class DecodeError(AudioProcessError):
     """音频解码或转码失败 / audio decoding or conversion failed."""
 
 
-class EngineError(SeparateError):
+class EngineError(AudioProcessError):
     """分离引擎加载或推理失败 / engine failed to load or to run."""
 
 
@@ -32,7 +31,7 @@ class ModelMissingError(EngineError):
     """
 
 
-class StemOrderError(SeparateError):
+class StemOrderError(AudioProcessError):
     """无法判定哪条轨是主体人声 / cannot tell which stem is the lead.
 
     见 `docs/issues/005`：官方示例写死 `stems[0]=vocals`，但实测不同模型的
@@ -45,6 +44,6 @@ __all__ = [
     "DecodeError",
     "EngineError",
     "ModelMissingError",
-    "SeparateError",
+    "AudioProcessError",
     "StemOrderError",
 ]

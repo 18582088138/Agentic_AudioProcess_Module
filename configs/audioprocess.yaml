@@ -1,4 +1,7 @@
-# Agentic_VoiceSeparate_Module —— 配置 / configuration
+# Agentic_AudioProcess_Module —— 配置 / configuration
+#
+# 本文件当前只覆盖**分离**引擎；降噪 / 去环境音 / 音质优化的配置项随
+# docs/10_audio_processing_roadmap.md 的推进再加，不要预先占位。
 #
 # 优先级 / priority: 进程环境变量 > .env > 本文件 > 代码内置默认值
 

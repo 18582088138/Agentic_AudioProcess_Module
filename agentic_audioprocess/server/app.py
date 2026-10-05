@@ -2,7 +2,7 @@
 
 **每个功能都是独立 endpoint**，可单独调用（用户明确要求的形态）。
 
-    python -m agentic_separate.server        # http://127.0.0.1:8302/docs
+    python -m agentic_audioprocess.server        # http://127.0.0.1:8302/docs
 """
 
 from __future__ import annotations
@@ -16,20 +16,20 @@ from typing import Any
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from agentic_separate import __version__
-from agentic_separate.core.config import SeparateConfig, load_config
-from agentic_separate.core.errors import SeparateError
-from agentic_separate.core.types import SeparationMode
-from agentic_separate.separate import SeparateModule
+from agentic_audioprocess import __version__
+from agentic_audioprocess.audioprocess import AudioProcessModule
+from agentic_audioprocess.core.config import AudioProcessConfig, load_config
+from agentic_audioprocess.core.errors import AudioProcessError
+from agentic_audioprocess.core.types import SeparationMode
 
 _ALLOWED_SUFFIX = {".wav", ".mp3", ".m4a", ".aac", ".flac", ".ogg", ".opus", ".aiff",
                    ".mp4", ".mkv", ".mov", ".webm", ".avi", ".ts"}
 
 
-def create_app(config: SeparateConfig | None = None) -> FastAPI:
+def create_app(config: AudioProcessConfig | None = None) -> FastAPI:
     """构造应用 / build the app（便于测试注入配置）."""
     cfg = config or load_config()
-    module = SeparateModule(cfg)
+    module = AudioProcessModule(cfg)
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -38,7 +38,7 @@ def create_app(config: SeparateConfig | None = None) -> FastAPI:
         finally:
             module.release()
 
-    api = FastAPI(title="Agentic_VoiceSeparate_Module", version=__version__,
+    api = FastAPI(title="Agentic_AudioProcess_Module", version=__version__,
                   lifespan=lifespan)
 
     def _save(upload: UploadFile) -> Path:
@@ -53,7 +53,7 @@ def create_app(config: SeparateConfig | None = None) -> FastAPI:
     def _guard(fn, *args: Any, **kwargs: Any) -> Any:
         try:
             return fn(*args, **kwargs)
-        except SeparateError as exc:
+        except AudioProcessError as exc:
             raise HTTPException(400, str(exc)) from exc
 
     @api.get("/healthz")
@@ -133,7 +133,7 @@ def run(host: str = "127.0.0.1", port: int = 8302, reload: bool = False,
     import uvicorn
 
     if reload or config:
-        uvicorn.run("agentic_separate.server.app:app", host=host, port=port, reload=reload)
+        uvicorn.run("agentic_audioprocess.server.app:app", host=host, port=port, reload=reload)
     else:
         uvicorn.run(app, host=host, port=port)
 

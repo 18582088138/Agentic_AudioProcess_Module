@@ -8,15 +8,15 @@ from __future__ import annotations
 import importlib
 from typing import TYPE_CHECKING
 
-from agentic_separate.core.errors import ConfigError
-from agentic_separate.engines.base import SeparationEngine
+from agentic_audioprocess.core.errors import ConfigError
+from agentic_audioprocess.engines.base import SeparationEngine
 
 if TYPE_CHECKING:  # pragma: no cover
     pass
 
 ENGINES: dict[str, str] = {
-    "uvr": "agentic_separate.engines.uvr:UvrEngine",
-    "null": "agentic_separate.engines.null:NullEngine",
+    "uvr": "agentic_audioprocess.engines.uvr:UvrEngine",
+    "null": "agentic_audioprocess.engines.null:NullEngine",
 }
 
 LIGHTWEIGHT = ("null",)
