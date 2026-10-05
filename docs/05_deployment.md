@@ -11,9 +11,9 @@
 
 ```bash
 conda activate ov_env_py312
-cd Agentic_VoiceSeparate_Module
+cd Agentic_AudioProcess_Module
 pip install -e ".[all]"
-separate doctor          # 检查 ffmpeg、sherpa-onnx、五个权重、VAD
+audio doctor          # 检查 ffmpeg、sherpa-onnx、五个权重、VAD
 ```
 
 ## 2 · 权重下载
@@ -33,7 +33,7 @@ separate doctor          # 检查 ffmpeg、sherpa-onnx、五个权重、VAD
 import requests, os
 base = ("https://github.com/k2-fsa/sherpa-onnx/releases/download/"
         "source-separation-models/")
-dst = r"F:\2026年\Agentic_VoiceSeparate_Module\models\sherpa-separation"
+dst = r"F:\2026年\Agentic_AudioProcess_Module\models\sherpa-separation"
 os.makedirs(dst, exist_ok=True)
 for name in ["UVR_MDXNET_KARA.onnx", "UVR-MDXNET-Voc_FT.onnx",
              "UVR-MDX-NET-Inst_Main.onnx"]:
@@ -70,8 +70,8 @@ RTF 0.232 ⇒ 30 秒音频约 7 秒；1 小时音频约 14 分钟。线程数由
 ## 4 · 服务化
 
 ```bash
-python -m agentic_separate.server          # http://127.0.0.1:8302/docs
-separate serve --host 0.0.0.0 --port 8302
+python -m agentic_audioprocess.server          # http://127.0.0.1:8302/docs
+audio serve --host 0.0.0.0 --port 8302
 ```
 
 端点：`/vocals` · `/accompaniment` · `/lead-removal` · `/separate` · `/doctor` ·
@@ -84,27 +84,16 @@ curl -F "file=@demo.mp4" http://127.0.0.1:8302/lead-removal
 ## 5 · GUI
 
 ```bash
-python -m agentic_separate.gui             # http://127.0.0.1:8402
+python -m agentic_audioprocess.gui             # http://127.0.0.1:8402
 ```
 
 三个面板各对应一个功能，产物直接内嵌播放器，可立刻试听。
 
-## 6 · 与 ASR 插件的关系
+## 6 · 与其它模组的关系
 
-两个插件**完全独立**：不同的包、不同的端口（8301 / 8302）、不同的模型目录，
-互不依赖。要串成流水线由调用方组合，例如「先分离再转写」：
+本模组**只做音频处理**，不 import 别的模组，也不在文档里指路别的模组的包名与接口
+（守则 §七 模组独立性）。要串成流水线（例如「先分离再转写」）由**应用层 pipeline**
+组合，组合脚本放在模组之外，不写进本仓库。
 
-```python
-from agentic_separate import SeparateModule
-from agentic_asr import ASRModule
-
-sep = SeparateModule()
-vocals = sep.extract_vocals("demo.mp4")
-
-asr = ASRModule()
-result = asr.transcribe(vocals.stems["vocals"].path)
-```
-
-⚠️ 但**不要**把分离出的伴奏轨（`accompaniment`）直接送去转写 ——
-它对无语音输入会编出假字幕。ASR 侧有闸门拦这种情况（见其 `issues/002`），
-但正确做法是根本别送。
+⚠️ 一条与下游打交道的经验：**不要把分离出的伴奏轨直接送去语音识别** ——
+无语音输入时识别器会编出假字幕。要送就送 `vocals` 轨，或先做语音活动检测。

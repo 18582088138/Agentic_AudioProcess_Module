@@ -1,6 +1,6 @@
 # 005 · 分离轨道顺序不能硬编码（官方示例与实测不一致）
 
-**状态**：已处理（`SeparateModule._resolve_order` 三级判定）
+**状态**：已处理（`AudioProcessModule._resolve_order` 三级判定）
 **发现**：开发阶段真实权重实测，2026-10-04
 
 ---
@@ -45,7 +45,7 @@ non_vocals = output.stems[1].data
 
 ## 修法 / Fix
 
-`SeparateModule._resolve_order()` 采用**四级**判定，从可靠到兜底：
+`AudioProcessModule._resolve_order()` 采用**四级**判定，从可靠到兜底：
 
 1. **配置显式指定** —— `engine.uvr.lead_stem_index`，用户说了算；
 2. **模型约定表**（默认）—— `_MODEL_LEAD_INDEX`，本机实测得出的
@@ -61,9 +61,9 @@ non_vocals = output.stems[1].data
 （形如 `model-convention:UVR_MDXNET_KARA.onnx->stem0`）。
 判定不可靠时（两条轨占比差 < 0.02）会额外写进 `warnings`。
 
-## 补记：为什么 VAD 只能当兜底（跨插件联调时又踩了一次）
+## 补记：为什么 VAD 只能当兜底（端到端联调时又踩了一次）
 
-第一版把 **VAD 语音占比**当默认判据，结果在跨插件端到端验证里**判反了**。
+第一版把 **VAD 语音占比**当默认判据，结果在端到端验证里**判反了**。
 
 素材：「中文主体（居中）+ 英文背景（偏侧 −10 dB）+ 正弦背景音乐」：
 
@@ -111,4 +111,4 @@ lead=accompaniment  依据=vad:speech_ratio {'vocals': 0.7624, 'accompaniment': 
 
 ## 备注
 
-对应 `docs/01_design.md §4.5`、`Agentic_ASR_Module/docs/00_research.md §4.4`。
+对应 `docs/01_design.md §4.5`。

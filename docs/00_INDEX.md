@@ -9,27 +9,26 @@
 | 开发过程 | `02_dev_plan.md` | 阶段划分与实际完成情况（回顾式） |
 | 测试 | `03_unit_tests.md` | 用例分布、刻意写死的断言、复测命令 |
 | **用法** | `04_api_reference.md` | **库 / HTTP / CLI 完整接口参考**（参数、返回、示例、错误码） |
-| 部署 | `05_deployment.md` | 权重下载、性能、服务化、与 ASR 插件的协作方式 |
+| 部署 | `05_deployment.md` | 权重下载、性能、服务化、与其它模组的关系 |
 | 接新引擎 | `06_add_engine.md` | 引擎抽象四步与硬约束 |
 | GUI | `07_gui_guide.md` | 三个面板的用法与手工验证清单 |
-| 提交 | `08_git_commands.md` | 分步 git 指令（**人工执行**） |
+| 提交 | `08_git_commands.md` | 首轮分步 git 指令（**人工执行**，已执行完） |
+| **功能版图** | `10_audio_processing_roadmap.md` | 降噪 / 去环境音 / 音质优化的版图、候选模型、验收口径 |
+| **改名重构的提交** | `11_git_commands_rename.md` | VoiceSeparate → AudioProcess 重构的 git 指令（**人工执行**） |
 | 开发记录 | `09_dev_log.md` | 交付内容、测试结果、与方案的偏差、后续待办 |
 | 问题单 | `issues/005-*.md` | 轨道顺序不能硬编码（含两次判据被实测否决的记录） |
 
-## 调研在哪
+## 模组独立性（守则 §七，硬约束）
 
-分离模型的**选型调研与全部实测数据在 ASR 项目的文档里**，本仓库不复制：
-
-- `Agentic_ASR_Module/docs/00_research.md §4.2 / §4.4` —— UVR vs demucs 实测、
-  KARA 系能否区分主体/背景人声、RTF 与显存、stem 顺序陷阱；
-- `Agentic_ASR_Module/docs/10_reference_research.md §2` —— 降噪 / 人声分离 / RoFormer 系
-  的技术参考（**仅备查**）。
-
-> 这一条是刻意的：**同一事实只在一处写权威**，复制一份迟早会两边不一致。
+**模组之间不许互相引用、互相指引**：本仓库不 import 别的模组，也不贴别的模组的
+目录结构、API、issue 与设计正文 —— 那些会随对方演进，抄过来必然过期。
+需要串联多个模组时由**应用层 pipeline** 组合，脚本放在模组之外。
+跨模组的调研与实测数据只在它自己的仓库或应用层写权威，本仓库只记录本模组的结论。
 
 ## 项目一句话
 
-Agentic_VoiceSeparate_Module —— 本地声音分离服务插件，三个功能各自独立可调用：
+Agentic_AudioProcess_Module —— 本地**音频处理**服务插件：吃进音频/视频，做出可用的
+前后处理结果。当前已实现**分离三件套**，三者各自独立可调用：
 
 | 功能 | 入口 |
 |---|---|
@@ -37,9 +36,12 @@ Agentic_VoiceSeparate_Module —— 本地声音分离服务插件，三个功�
 | 背景音提取 | `extract_accompaniment()` |
 | **主体人声去除**（保留背景人声） | `remove_lead_vocal()` |
 
-库 / CLI(`separate …`) / HTTP(8302) / GUI(8402) 四种用法共用同一个门面。
+降噪 / 去环境音 / 音质优化**尚未实现**，版图见 `10_audio_processing_roadmap.md`。
+
+库 / CLI(`audio …`) / HTTP(8302) / GUI(8402) 四种用法共用同一个门面。
 
 ## 一条不可违反的约束
 
-**分离全部走 `sherpa-onnx` 自带的 UVR 后端，不引入 torch 或 demucs。**
-实测 CPU RTF 0.23~0.36（比 demucs 在 GPU 上还快）、显存占用 0、模型 28~67 MB。
+**处理能力优先走 `sherpa-onnx` 生态，不引入 torch 或 demucs。**
+分离实测 CPU RTF 0.23~0.36（比 demucs 在 GPU 上还快）、显存占用 0、模型 28~67 MB；
+后续新增的降噪 / 去环境音按同一条选型（见 `10_audio_processing_roadmap.md`）。

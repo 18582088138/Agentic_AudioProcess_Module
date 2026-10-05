@@ -2,10 +2,10 @@
 
 > 起法两种，等价：
 > ```bash
-> python -m agentic_separate.gui      # 默认 http://127.0.0.1:8402
-> separate gui                        # 同上（端口 = config.server.port + 100）
+> python -m agentic_audioprocess.gui      # 默认 http://127.0.0.1:8402
+> audio gui                        # 同上（端口 = config.server.port + 100）
 > ```
-> `ui.run(show=True)` 会**自动打开浏览器**。要换端口：`separate gui --port 8500`。
+> `ui.run(show=True)` 会**自动打开浏览器**。要换端口：`audio gui --port 8500`。
 
 界面用 NiceGUI 搭，**三个功能各占一个页签**，每个都能独立调用 ——
 可以只做「人声提取」，也可以只做「主体人声去除」，不必走完整流水线。
@@ -16,7 +16,7 @@
 
 | 控件 | 说明 |
 |---|---|
-| 标题 | `Agentic VoiceSeparate <版本>` |
+| 标题 | `Agentic AudioProcess <版本>` |
 | **引擎下拉** | 默认选中 `uvr`；另有 `null`（零依赖占位，用于不加载权重先看界面效果） |
 | **状态栏** | 实时反馈：`就绪` / `处理中…` / `完成 / done (N 轨)` / `失败` / `已上传` / `上传失败` 等，成功为绿色、失败为红色 |
 
@@ -94,7 +94,7 @@
 
 | # | 步骤 | 期望 |
 |---|---|---|
-| 1 | `python -m agentic_separate.gui` | 浏览器自动打开 8402，状态栏「就绪」，引擎下拉有 `uvr` / `null` |
+| 1 | `python -m agentic_audioprocess.gui` | 浏览器自动打开 8402，状态栏「就绪」，引擎下拉有 `uvr` / `null` |
 | 2 | 上传一个 mp4 | 路径框被自动填入 `outputs/uploads/xxx.mp4`，状态栏提示已上传 |
 | 3 | 切到 ①，点「提取人声」 | 状态栏转「处理中」，随后出现 `vocals` 轨 + 播放器；试听应只剩人声 |
 | 4 | 切到 ②，点「提取背景音」 | 出现 `accompaniment` 轨；**试听应完全没有说话声**（可能只剩音乐/环境音） |
@@ -105,7 +105,7 @@
 | 9 | 引擎切到 `null` 再点一次 | 立刻返回（不加载权重），用于确认界面链路本身没问题 |
 
 第 6 步是**这个插件唯一真正重要的验收**：如果 `background` 里主体人声还在、
-`lead` 里是背景人声，那说明轨道方向判反了 —— 用 `separate lead-removal --lead-index 1`
+`lead` 里是背景人声，那说明轨道方向判反了 —— 用 `audio lead-removal --lead-index 1`
 （或在配置里设 `engine.uvr.lead_stem_index`）反过来即可。
 
 ---

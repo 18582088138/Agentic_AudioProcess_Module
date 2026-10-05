@@ -1,7 +1,9 @@
-# Agentic VoiceSeparate Module
+# Agentic AudioProcess Module
 
-可插拔的**本地**声音分离服务插件。三个功能，每个都能在库 / CLI / HTTP / GUI 中
-**独立调用**：
+可插拔的**本地音频处理服务插件**：吃进音频/视频，吐出可直接用的**前后处理**结果 ——
+分离、净化、修复，全部在 CPU 上跑，**零显存占用**、不引入 torch。
+
+**已实现：分离三件套**，每个都能在库 / CLI / HTTP / GUI 中**独立调用**：
 
 | 功能 | 说明 | 模型 |
 |---|---|---|
@@ -13,7 +15,11 @@
 > 实测把人声/背景音二分的模型（如 demucs）在「中文主体 + 英文背景」素材上，
 > 会把两种人声一起带走，`no_vocals` 轨只剩近静音。
 
-配套的 ASR 插件见 **Agentic_ASR_Module**。
+**规划中：音频前后处理** —— 降噪 · 去环境音 · 音质优化 · 统一处理管线。
+版图、优先级与候选模型见 [docs/10_audio_processing_roadmap.md](docs/10_audio_processing_roadmap.md)。
+
+本模组**只做音频处理**：转写、字幕、配音合成不在这里 —— 需要时由**应用层**把本模组
+与其它模组组合起来（组合脚本放在模组之外，见 `docs/00_INDEX.md §模组独立性`）。
 
 ---
 
@@ -21,35 +27,35 @@
 
 ```bash
 conda activate ov_env_py312
-cd Agentic_VoiceSeparate_Module
+cd Agentic_AudioProcess_Module
 pip install -e ".[all]"
 
 # 体检：ffmpeg、sherpa-onnx、五个权重、VAD
-separate doctor
+audio doctor
 
 # 不加载权重先试链路（零依赖占位引擎）
-separate vocals demo.mp4 --engine null
+audio vocals demo.mp4 --engine null
 
 # 人声提取
-separate vocals demo.mp4
+audio vocals demo.mp4
 
 # 背景音提取
-separate accompaniment demo.mp4
+audio accompaniment demo.mp4
 
 # 主体人声去除（保留背景人声）
-separate lead-removal demo.mp4
+audio lead-removal demo.mp4
 
 # 图形界面 / HTTP 服务
-python -m agentic_separate.gui      # http://127.0.0.1:8402
-python -m agentic_separate.server   # http://127.0.0.1:8302/docs
+python -m agentic_audioprocess.gui      # http://127.0.0.1:8402
+python -m agentic_audioprocess.server   # http://127.0.0.1:8302/docs
 ```
 
 ## 库用法
 
 ```python
-from agentic_separate import SeparateModule
+from agentic_audioprocess import AudioProcessModule
 
-sep = SeparateModule()                            # 读 configs/separate.yaml
+sep = AudioProcessModule()                            # 读 configs/audioprocess.yaml
 
 v = sep.extract_vocals("demo.mp4")                # ① 人声提取
 b = sep.extract_accompaniment("demo.mp4")         # ② 背景音提取

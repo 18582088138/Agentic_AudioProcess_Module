@@ -11,14 +11,14 @@
 ### 1.1 构造 / constructor
 
 ```python
-from agentic_separate import SeparateModule
+from agentic_audioprocess import AudioProcessModule
 
-sep = SeparateModule(config=None, engine=None)
+sep = AudioProcessModule(config=None, engine=None)
 ```
 
 | 参数 | 类型 | 说明 |
 |---|---|---|
-| `config` | `SeparateConfig \| None` | None 时读 `configs/separate.yaml`（缺失则用内置默认值） |
+| `config` | `AudioProcessConfig \| None` | None 时读 `configs/audioprocess.yaml`（缺失则用内置默认值） |
 | `engine` | `str \| SeparationEngine \| None` | 引擎名或引擎实例；None 用 `config.engine.default`（默认 `uvr`） |
 
 **权重是懒加载的**：构造实例不花时间，也不占内存 —— 真正加载发生在第一次分离时。
@@ -27,7 +27,7 @@ sep = SeparateModule(config=None, engine=None)
 支持上下文管理器，退出时自动卸载：
 
 ```python
-with SeparateModule() as sep:
+with AudioProcessModule() as sep:
     result = sep.extract_vocals("demo.mp4")
 # 到这里权重已释放
 ```
@@ -70,7 +70,7 @@ def separate(media, mode=None, out_dir=None, engine=None) -> SeparationResult
 | `out_dir` | `str \| Path \| None` | None 用 `config.output_dir`（默认项目根的 `outputs/`） |
 | `engine` | `str \| None` | None 用配置默认 |
 
-未知模式抛 `SeparateError`，错误信息里会列出全部合法取值。
+未知模式抛 `AudioProcessError`，错误信息里会列出全部合法取值。
 
 ### 1.4 元信息与生命周期 / meta & lifecycle
 
@@ -160,7 +160,7 @@ def separate(media, mode=None, out_dir=None, engine=None) -> SeparationResult
 
 `duration` 与 `channels` 是只读属性。
 
-#### `SeparateConfig` 关键项
+#### `AudioProcessConfig` 关键项
 
 | 字段 | 默认 | 说明 |
 |---|---|---|
@@ -170,15 +170,15 @@ def separate(media, mode=None, out_dir=None, engine=None) -> SeparationResult
 | `engine.uvr.provider` | `"cpu"` | onnxruntime provider |
 | `engine.uvr.lead_stem_index` | `None` | 显式指定哪条轨是主体；None = 自动判定 |
 | `mode` | `"lead_removal"` | `separate()` 不传 mode 时的默认 |
-| `models` | 三模式映射 | 见 `configs/separate.yaml` |
+| `models` | 三模式映射 | 见 `configs/audioprocess.yaml` |
 | `output_sample_rate` | `44100` | 解码目标采样率 |
 | `normalize` | `False` | **不做逐轨峰值归一化**（会破坏轨间相对音量；当前实现未使用此开关，保留为配置位） |
 | `output_dir` | 项目根 `outputs/` | 默认产物目录 |
 | `server.host` / `server.port` | `127.0.0.1` / `8302` | HTTP 服务 |
 
-配置优先级：**进程环境变量 > `.env` > `configs/separate.yaml` > 内置默认值**。
-环境变量名见 `.env.example`（`SEPARATE_ENGINE` / `SEPARATE_MODE` / `SEPARATE_MODELS_DIR` /
-`SEPARATE_OUTPUT_DIR` / `SEPARATE_NUM_THREADS` / `SEPARATE_SERVER_HOST` / `SEPARATE_SERVER_PORT`）。
+配置优先级：**进程环境变量 > `.env` > `configs/audioprocess.yaml` > 内置默认值**。
+环境变量名见 `.env.example`（`AUDIOPROCESS_ENGINE` / `AUDIOPROCESS_MODE` / `AUDIOPROCESS_MODELS_DIR` /
+`AUDIOPROCESS_OUTPUT_DIR` / `AUDIOPROCESS_NUM_THREADS` / `AUDIOPROCESS_SERVER_HOST` / `AUDIOPROCESS_SERVER_PORT`）。
 
 ### 1.6 落盘命名 / output naming
 
@@ -201,9 +201,9 @@ def separate(media, mode=None, out_dir=None, engine=None) -> SeparationResult
 
 ```python
 from pathlib import Path
-from agentic_separate import SeparateModule, SeparationMode
+from agentic_audioprocess import AudioProcessModule, SeparationMode
 
-with SeparateModule() as sep:
+with AudioProcessModule() as sep:
     # ① 人声提取：要所有人声
     v = sep.extract_vocals("demo.mp4", out_dir="outputs/refs")
     print(v.stems["vocals"].path, v.stems["vocals"].duration)
@@ -234,7 +234,7 @@ with SeparateModule() as sep:
 ## 2 · HTTP
 
 ```bash
-python -m agentic_separate.server          # 或 separate serve
+python -m agentic_audioprocess.server          # 或 audio serve
 # http://127.0.0.1:8302/docs  （自动生成的交互式文档）
 ```
 
@@ -293,7 +293,7 @@ curl -s http://127.0.0.1:8302/doctor | jq
 curl -s http://127.0.0.1:8302/engines | jq
 
 # 下载产物（路径必须是 outputs 之内）
-curl -s -o out.wav "http://127.0.0.1:8302/download?path=F:/2026年/Agentic_VoiceSeparate_Module/outputs/http/demo_lead_removal_background.wav"
+curl -s -o out.wav "http://127.0.0.1:8302/download?path=F:/2026年/Agentic_AudioProcess_Module/outputs/http/demo_lead_removal_background.wav"
 ```
 
 成功响应就是 `SeparationResult.to_dict()`：
@@ -322,7 +322,7 @@ curl -s -o out.wav "http://127.0.0.1:8302/download?path=F:/2026年/Agentic_Voice
 |---|---|---|
 | **415** | 上传扩展名不在白名单 | `{"detail": "不支持的扩展名 / unsupported suffix: .txt"}` |
 | **422** | `/separate` 的 `mode` 非法 | `{"detail": "未知模式 / unknown mode: bogus"}` |
-| **400** | 分离失败（`SeparateError`：空音频、未知模式、权重缺失、引擎报错） | `{"detail": "<错误信息>"}` |
+| **400** | 分离失败（`AudioProcessError`：空音频、未知模式、权重缺失、引擎报错） | `{"detail": "<错误信息>"}` |
 | **403** | `/download` 的 `path` 落在 `outputs/` 之外 | `{"detail": "只允许下载 outputs 目录内的文件 / outside outputs"}` |
 | **404** | `/download` 的文件不存在 | `{"detail": "文件不存在 / not found"}` |
 
@@ -349,8 +349,8 @@ curl -s -o /dev/null -w "%{http_code}\n" -F "file=@demo.wav" -F "mode=bogus" \
 ## 3 · CLI
 
 ```bash
-separate --help              # 安装后可用
-python -m agentic_separate.cli --help    # 等价写法
+audio --help              # 安装后可用
+python -m agentic_audioprocess.cli --help    # 等价写法
 ```
 
 ### 3.1 命令一览
@@ -383,38 +383,38 @@ python -m agentic_separate.cli --help    # 等价写法
 
 ```bash
 # 体检
-separate doctor
+audio doctor
 
 # 引擎与模式
-separate engines
+audio engines
 
 # ① 人声提取
-separate vocals demo.mp4
-separate vocals demo.mp4 --out-dir outputs/refs
+audio vocals demo.mp4
+audio vocals demo.mp4 --out-dir outputs/refs
 
 # ② 背景音提取
-separate accompaniment demo.mp4
+audio accompaniment demo.mp4
 
 # ③ 主体人声去除（会打印 lead_stem 与判定依据）
-separate lead-removal demo.mp4
-separate lead-removal demo.mp4 --lead-index 1     # 强制方向
+audio lead-removal demo.mp4
+audio lead-removal demo.mp4 --lead-index 1     # 强制方向
 
 # 通用入口
-separate run demo.mp4 --mode both
-separate run demo.mp4 --mode vocals
+audio run demo.mp4 --mode both
+audio run demo.mp4 --mode vocals
 
 # 不加载权重先验证链路（零依赖占位引擎）
-separate vocals demo.mp4 --engine null
+audio vocals demo.mp4 --engine null
 
 # 服务与界面
-separate serve --host 0.0.0.0 --port 8302
-separate gui --port 8402
+audio serve --host 0.0.0.0 --port 8302
+audio gui --port 8402
 ```
 
 `lead-removal` 的**实际输出**（在 `models/samples/zh.mp3` 上以 `--engine null` 跑出来的原样）：
 
 ```
-$ python -m agentic_separate.cli lead-removal models\samples\zh.mp3 --engine null
+$ python -m agentic_audioprocess.cli lead-removal models\samples\zh.mp3 --engine null
 null  mode=lead_removal  duration=5.62s  sr=44100
 主体人声轨 / lead stem: lead　判定依据 / evidence: model-convention:UVR_MDXNET_KARA.onnx->stem0
                               轨 / stems
@@ -430,7 +430,7 @@ null  mode=lead_removal  duration=5.62s  sr=44100
 > `_resolve_order()` 查约定表用的是**配置里该模式的权重文件名**
 > （`config.model_path(mode)`），与实际加载哪个引擎无关。真实使用 `uvr` 引擎时两者一致。
 
-**退出码**：成功 0；`SeparateError`（未知模式、文件不存在、权重缺失等）→ 1；
+**退出码**：成功 0；`AudioProcessError`（未知模式、文件不存在、权重缺失等）→ 1；
 `Ctrl-C` → 130。
 
 ---

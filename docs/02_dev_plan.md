@@ -20,8 +20,8 @@
 | 阶段 | 当初计划做什么 | 实际完成 | 完成判据 |
 |---|---|---|---|
 | **0 · 工程骨架** | `git init`、`pyproject.toml`、`.gitignore`、`.env.example`、`tools/check.py`、`.dsh/skills` | ✅ | `python tools/check.py` 能跑通（环境自检 + ruff 跳过 + 空测试集） |
-| **1 · core + audio** | 配置、类型、异常、日志；44.1 kHz 立体声解码；语音占比检测 | ✅ | `separate doctor` 打印模型存在性；`decode()` 出口形状为 `(n, 2)` |
-| **2 · engines** | `SeparationEngine` 抽象 + `uvr`（sherpa-onnx）+ `null` 占位 | ✅ | `separate engines` 列出两个引擎与各自模式；`null` 引擎输出确定 |
+| **1 · core + audio** | 配置、类型、异常、日志；44.1 kHz 立体声解码；语音占比检测 | ✅ | `audio doctor` 打印模型存在性；`decode()` 出口形状为 `(n, 2)` |
+| **2 · engines** | `SeparationEngine` 抽象 + `uvr`（sherpa-onnx）+ `null` 占位 | ✅ | `audio engines` 列出两个引擎与各自模式；`null` 引擎输出确定 |
 | **3 · 门面** | 解码归一、**轨道顺序判定**、等长校验、落盘命名、模式路由 | ✅ | 三个功能在 `--engine null` 下产出正确轨名与文件 |
 | **4 · 接口层** | CLI（9 个命令）、HTTP（9 个端点）、GUI（3 个页签） | ✅ | 三者调用同一个门面，端点/命令/页签一一对应 |
 | **5 · 测试** | 离线套件 + 真实权重用例 + 回归 | ✅ | 全绿；**具体条数现算**：`python tools/check.py`（文档里不钉死条数，免得腐烂） |

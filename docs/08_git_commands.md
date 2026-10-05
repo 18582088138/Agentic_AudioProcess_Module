@@ -1,8 +1,12 @@
 # 08 · Git 提交指令汇总（人工执行）
 
 > **AI 不执行 `git commit` / `git push`**，本文件交人工执行。
-> 仓库已 `git init`、`git add` 过但**还没有任何 commit**（`master` 分支为空），
-> 所以这是**首次提交**，按功能拆成 8 组。
+> ⚠️ **本文件是首轮开发的指令，已全部执行完（仓库现有 8 条提交），留档备查。**
+> 本轮**改名重构**（VoiceSeparate → AudioProcess）的提交指令见
+> `11_git_commands_rename.md`；两者不要混着执行。
+>
+> 下文出现的 `agentic_separate/`、`separate` 等旧标识符是**当时的历史状态**，
+> 已按 `PROJECT_MEMORY.md §改名重构` 全部改名，**不要照着旧路径重新 add**。
 
 **提交前确认**：
 
@@ -27,7 +31,7 @@ git commit -m "chore: 工程骨架与依赖
 
 - pyproject.toml: 只依赖 sherpa-onnx（不需要 torch，也不需要 demucs）
 - tools/check.py: 收尾闸口（环境自检 + ruff + 全量测试）
-- .dsh/skills/agentic-separate-dev: 三个模式的模型映射与轨道判定纪律"
+- .dsh/skills/agentic-audioprocess-dev: 三个模式的模型映射与轨道判定纪律"
 ```
 
 ## 步骤 2/8 · 方案、部署与项目记忆
@@ -47,11 +51,11 @@ git commit -m "docs: 方案、部署与项目记忆
 
 ```bash
 git reset
-git add agentic_separate/__init__.py agentic_separate/core/ agentic_separate/audio/ configs/
+git add agentic_audioprocess/__init__.py agentic_audioprocess/core/ agentic_audioprocess/audio/ configs/
 git commit -m "feat(core): 配置、类型、异常与音频层
 
 - 解码出口固定 44.1kHz 立体声（UVR 模型的输入要求）
-- 语音占比检测沿用 ASR 侧的两个 VAD 教训（分块喂 + 边喂边取）
+- 语音占比检测记下两个 VAD 教训（分块喂 + 边喂边取）
 - 模式到模型的映射写在 config：去主体人声必须用 KARA 系"
 ```
 
@@ -59,7 +63,7 @@ git commit -m "feat(core): 配置、类型、异常与音频层
 
 ```bash
 git reset
-git add agentic_separate/engines/
+git add agentic_audioprocess/engines/
 git commit -m "feat(engines): UVR 分离引擎与占位引擎
 
 - uvr: sherpa-onnx 的 OfflineSourceSeparation（CPU RTF 0.232、零显存、零新增依赖）
@@ -71,8 +75,8 @@ git commit -m "feat(engines): UVR 分离引擎与占位引擎
 
 ```bash
 git reset
-git add agentic_separate/separate.py
-git commit -m "feat: 门面 SeparateModule 与四级轨道判定
+git add agentic_audioprocess/audioprocess.py
+git commit -m "feat: 门面 AudioProcessModule 与四级轨道判定
 
 - 人声提取 / 背景音提取 / 主体人声去除，三者各自独立可调用
 - _resolve_order: 配置 > **模型约定表** > VAD > 兜底，依据回传到结果里
@@ -86,7 +90,7 @@ git commit -m "feat: 门面 SeparateModule 与四级轨道判定
 
 ```bash
 git reset
-git add agentic_separate/cli.py agentic_separate/__main__.py  agentic_separate/server/ agentic_separate/gui/
+git add agentic_audioprocess/cli.py agentic_audioprocess/__main__.py  agentic_audioprocess/server/ agentic_audioprocess/gui/
 git commit -m "feat: CLI / HTTP / GUI
 
 - 三个功能各自独立命令 / 端点 / 面板，均可单独调用
@@ -129,8 +133,8 @@ git log --oneline   # 8 条提交
 
 ---
 
-## 与 ASR 插件的关系
+## 与其它模组的关系
 
-两个仓库**各自独立提交**，没有子模块关系，也没有交叉引用权重。
-若你在 ASR 仓库里看到对分离插件的引用，那只是文档指针，不是代码依赖 ——
-分离插件可以单独部署、单独运行。
+本模组**只做音频处理**，不 import 别的模组，也不在文档里指引别的模组的路径与接口
+（守则 §七 模组独立性）。需要串联多个模组时由**应用层 pipeline** 组合，
+组合脚本放在模组之外。

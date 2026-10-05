@@ -47,7 +47,7 @@ C:\Users\75203\miniforge3\envs\ov_env_py312\python.exe tools\check.py
 |---|---|
 | `voice_over_music_wav` | 9 秒「类语音 + 背景音乐」44.1 kHz 立体声（中间留静音给 VAD 一个断点） |
 | `music_only_wav` | 6 秒纯音乐（无语音），用于检验"没有语音时不瞎判" |
-| `module` | 用 `null` 引擎、输出到临时目录的 `SeparateModule` |
+| `module` | 用 `null` 引擎、输出到临时目录的 `AudioProcessModule` |
 | `uvr_models_dir` | 权重目录路径 |
 
 素材全部是**合成**的 —— 默认套件不能依赖仓库里的大文件。
@@ -65,8 +65,8 @@ C:\Users\75203\miniforge3\envs\ov_env_py312\python.exe tools\check.py
 | `test_module.py::test_lead_removal_can_be_forced_by_config` | 断言依据串带 `config:lead_stem_index=0` | 判反时的逃生舱必须真的生效 |
 | `test_module.py::test_vad_is_used_for_unknown_models` | 断言未知模型退回 `vad:` 且提示里带「约定表 / music」 | 兜底路径不能静默变成"确定" |
 | `test_module.py::test_stems_are_same_length_as_input` | 断言各轨样本数 **等于**输入 | 不等长会让下游时间轴整体漂移且不报错 |
-| `test_audio.py::test_silero_backend_detects_voice` | 断言语音占比 **> 0.4** | 回归两个 VAD 陷阱：整段喂入会漏检、环形缓冲不取会丢段（`Agentic_ASR_Module/docs/issues/003`） |
-| `test_gui.py::test_upload_event_arguments_shape` | 断言事件字段里有 `file`、而 **`name` / `content` 不在** | NiceGUI 3.x 改了上传 API；老写法会让上传直接报错（`Agentic_ASR_Module/docs/issues/006`） |
+| `test_audio.py::test_silero_backend_detects_voice` | 断言语音占比 **> 0.4** | 回归两个 VAD 陷阱：整段喂入会漏检、环形缓冲不取会丢段 |
+| `test_gui.py::test_upload_event_arguments_shape` | 断言事件字段里有 `file`、而 **`name` / `content` 不在** | NiceGUI 3.x 改了上传 API；老写法会让上传直接报错 |
 | `test_real.py::test_kara_separates_lead_from_background` | 断言两条轨 rms **都 > 1e-4**（都不是静音） | 若退化成普通的人声/伴奏二分，背景轨会接近静音 —— 那是本插件核心能力的失效信号 |
 
 最后一条是**这个插件唯一真正重要的验收**：它用的素材是

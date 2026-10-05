@@ -4,16 +4,20 @@
 
 ## 当前状态（2026-10）
 
-**开发已完成**，`tools/check.py` 全绿（数字现跑）。
+**分离功能开发已完成**，`tools/check.py` 全绿（数字现跑）；
+**项目已改名为音频处理模块**（原 VoiceSeparate），标识符映射见本文 §改名重构。
 
-本仓库是**分离插件**；ASR 插件是另一个仓库
-`F:\2026年\Agentic_ASR_Module`，两者互不依赖。
+本仓库是**音频处理模组**（分离 + 前后处理）。转写等能力不在本模组 ——
+**模组之间不许互相引用、互相指引**（守则 §七）：需要串联多个模组时由**应用层 pipeline**
+组合，脚本放在模组之外（`F:\2026年\Agentic_Pipelines\`），不写进任何模组。
 
 剩下的是**人工动作**：
 
 | 待办 | 看哪 |
 |---|---|
-| git 提交（分步指令） | `docs/08_git_commands.md` |
+| **本轮改名的 git 提交** | `docs/11_git_commands_rename.md` |
+| 首轮开发的分步指令（已执行完，留档） | `docs/08_git_commands.md` |
+| 降噪 / 去环境音 / 音质优化的推进 | `docs/10_audio_processing_roadmap.md` |
 | **拿真实影视素材复验泛化性** —— 这是本插件最要紧的未验项 | `docs/09_dev_log.md` 的后续待办 |
 | 界面手工验证 | `docs/07_gui_guide.md` 的 9 步清单 |
 
@@ -22,7 +26,7 @@
 （中文主体 + 英文背景，结论是能分开）。真实素材表现请你复验。
 
 **接手顺序**：本文件 → `docs/00_INDEX.md` → 按需读一份。
-**改代码前必读** `.dsh/skills/agentic-separate-dev/SKILL.md`。
+**改代码前必读** `.dsh/skills/agentic-audioprocess-dev/SKILL.md`。
 
 ## 环境
 
@@ -31,17 +35,17 @@
 | Python | `C:\Users\75203\miniforge3\envs\ov_env_py312\python.exe`（3.12.14） |
 | ffmpeg | `C:\Users\75203\Documents\ffmpeg-master\bin`（**已在 PATH**，必需） |
 | 依赖 | 只有 `sherpa-onnx`（+2 个包）。**不需要 torch，也不需要 demucs** |
-| GPU | 不参与。分离全部在 CPU 上跑，显存占用 0 |
+| GPU | 不参与。分离全部在 CPU 上跑，显存占用 0（后续处理能力同样按 CPU 优先选型） |
 
 ## 常用命令
 
 ```bash
-cd F:\2026年\Agentic_VoiceSeparate_Module
+cd F:\2026年\Agentic_AudioProcess_Module
 python -m pytest tests -q               # 离线（约 5 秒）
 python -m pytest tests -q -m real       # 真实 UVR 权重（约 30 秒）
 python tools/check.py                   # 收尾闸口
 
-separate doctor / engines / vocals / accompaniment / lead-removal / run / serve / gui
+audio doctor / engines / vocals / accompaniment / lead-removal / run / serve / gui
 ```
 
 ## 实测数字（不要凭印象改）
@@ -75,6 +79,37 @@ separate doctor / engines / vocals / accompaniment / lead-removal / run / serve 
 | `vocals` | `UVR-MDX-NET-Voc_FT.onnx` | 要**所有**人声 |
 | `accompaniment` | `UVR-MDX-NET-Inst_Main.onnx` | 去掉**所有**人声 |
 | `lead_removal` | `UVR_MDXNET_KARA.onnx` | 只去**主体**人声，背景人声保留 |
+
+## 改名重构（VoiceSeparate → AudioProcess）
+
+只改**项目级标识符**；语义本来就属于「分离」的符号一律保留，改了反而错。
+
+| 项 | 旧 | 新 |
+|---|---|---|
+| 仓库 / 目录 | `Agentic_VoiceSeparate_Module` | `Agentic_AudioProcess_Module` |
+| 分发名 | `agentic-separate` | `agentic-audioprocess` |
+| 包名 | `agentic_separate` | `agentic_audioprocess` |
+| 门面文件 | `separate.py` | `audioprocess.py` |
+| 门面类 | `SeparateModule` | `AudioProcessModule` |
+| 配置类 | `SeparateConfig` | `AudioProcessConfig` |
+| 异常基类 | `SeparateError` | `AudioProcessError` |
+| 配置文件 | `configs/separate.yaml` | `configs/audioprocess.yaml` |
+| CLI | `separate` | `audio` |
+| 环境变量前缀 | `SEPARATE_*` | `AUDIOPROCESS_*` |
+| 开发 skill | `agentic-separate-dev` | `agentic-audioprocess-dev` |
+
+**保留**：`SeparationMode` / `SeparationResult` / `SeparationEngine` / `StemOrderError` /
+`SEPARATION_SR` / 门面方法 `separate()` / HTTP 端点 `/separate`。
+
+改名后必须重装 editable 包（旧 `egg-info` 指向旧包名）：`pip install -e ".[all]"`。
+本地 `.env` 若存在，把 `SEPARATE_*` 改成 `AUDIOPROCESS_*`（本机当前**没有** `.env`，
+所以无迁移成本）。提交指令见 `docs/11_git_commands_rename.md`。
+
+## 模组独立性（守则 §七，硬约束）
+
+**不许互相引用、互相指引**：不 import 别的模组，不贴别的模组的路径 / API / issue /
+设计正文；需要串联多个模组时由**应用层 pipeline** 组合，脚本放在模组之外
+（`F:\2026年\Agentic_Pipelines\`）。本仓库只记录本模组的结论。
 
 ## 提交纪律
 

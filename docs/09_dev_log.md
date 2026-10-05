@@ -10,14 +10,14 @@
 
 | 部分 | 内容 |
 |---|---|
-| 包 | `agentic_separate/` —— core / audio / engines / separate.py（门面）/ server / gui / cli.py |
+| 包 | `agentic_audioprocess/` —— core / audio / engines / audioprocess.py（门面）/ server / gui / cli.py |
 | 引擎 | `uvr`（sherpa-onnx 的 UVR MDX 系 onnx，**CPU**）、`null`（零依赖占位） |
 | 功能 | 人声提取 · 背景音提取 · **主体人声去除**（+ 通用入口「两轨都要」） |
-| 四种用法 | Python 库 · CLI（`separate`）· HTTP（8302）· GUI（8402） |
+| 四种用法 | Python 库 · CLI（`audio`）· HTTP（8302）· GUI（8402） |
 | 权重 | `models/sherpa-separation/` 5 个 onnx（28~67 MB）+ `models/sherpa-vad/silero_vad.onnx` |
 | 文档 | `docs/`（索引 / 方案 / 接口 / 测试 / 部署 / 接引擎 / GUI / 提交指令 / 本记录 / 问题单） |
 
-**关键实测结论**（选型依据写在 `Agentic_ASR_Module/docs/00_research.md §4.4`）：
+**关键实测结论**：
 本插件的分离在 **CPU** 上 RTF 0.232（KARA），比对照方案 demucs 在 **GPU** 上（0.740）
 还快，且**零显存占用**、**零新增重依赖**。
 
@@ -93,16 +93,14 @@ lead=accompaniment  依据=vad:speech_ratio {'vocals': 0.7624, 'accompaniment': 
 
 ### 3.3 一处已知死代码（未清理）
 
-`separate.py` 里的模块级常量 `_MODE_STEMS`（模式 → 对外轨名的映射表）
+`audioprocess.py` 里的模块级常量 `_MODE_STEMS`（模式 → 对外轨名的映射表）
 **定义了但没有被任何代码引用** —— 实际映射由 `_to_output_stems()` 直接完成。
 保留它只会让读代码的人以为改它有用。属清理项，见 §5。
 
-### 3.4 与 ASR 插件的 GUI issue 是同一根因（跨项目）
+### 3.4 NiceGUI 3.x 的上传契约变更（已修）
 
 NiceGUI 3.x 改了上传事件的结构（`UploadEventArguments` 只剩 `file` 字段，
-2.x 的 `e.name` / `e.content` 没了）。本插件的 GUI 与 ASR 插件是同一份写法，
-**一并修了**，但问题单只建在 ASR 仓库：
-`Agentic_ASR_Module/docs/issues/006-nicegui-3-upload-event-has-no-name.md`。
+2.x 的 `e.name` / `e.content` 没了）。旧写法会让上传直接报错。
 本仓库的回归用例在 `tests/test_gui.py`。
 
 ---
@@ -112,13 +110,14 @@ NiceGUI 3.x 改了上传事件的结构（`UploadEventArguments` 只剩 `file` �
 | 单 | 内容 | 回归用例 |
 |---|---|---|
 | `issues/005-stem-order-is-not-fixed.md` | 轨道顺序不能硬编码；官方示例与实测不一致；**能量与 VAD 两条判据都被否决** | `test_model_convention_wins_over_vad`、`test_lead_removal_can_be_forced_by_config`、`test_vad_is_used_for_unknown_models`、`test_kara_separates_lead_from_background` |
+| `issues/006-existing-ruff-findings.md` | 装上 ruff 后暴露的 20 项既有 lint 问题（闸口首次真正运行） | `tools/check.py` 的 ruff 段 |
 
-**跨项目引用的两个坑**（本插件继承了它们的教训，未在本仓库重复建单）：
+**另外两个坑（各自在本仓库都有回归用例）**：
 
-| 来源 | 内容 | 本插件怎么应对 |
-|---|---|---|
-| `Agentic_ASR_Module/docs/issues/003` | sherpa-onnx 的 Silero VAD **必须分块喂 + 边喂边取**，否则静默漏检/丢段 | `audio/vad.py` 直接照做，并用 `test_audio.py::test_silero_backend_detects_voice`（占比 > 0.4）守住 |
-| `Agentic_ASR_Module/docs/issues/006` | NiceGUI 3.x 上传事件没有 `name` | `gui/app.py::save_upload` 用 `await file.save()`；`test_gui.py` 锁死契约 |
+| 内容 | 本模组怎么应对 |
+|---|---|
+| sherpa-onnx 的 Silero VAD **必须分块喂 + 边喂边取**，否则静默漏检/丢段 | `audio/vad.py` 直接照做，并用 `test_audio.py::test_silero_backend_detects_voice`（占比 > 0.4）守住 |
+| NiceGUI 3.x 上传事件没有 `name` | `gui/app.py::save_upload` 用 `await file.save()`；`test_gui.py` 锁死契约 |
 
 ---
 
@@ -135,8 +134,23 @@ NiceGUI 3.x 改了上传事件的结构（`UploadEventArguments` 只剩 `file` �
 
 ---
 
-## 6 · 状态
+## 6 · 改名重构 / rename（VoiceSeparate → AudioProcess）
 
-开发、测试、文档均已完成；两个仓库都已 `git init` 且 `git add -A`
-（`.env` / `models/` / `outputs/` 均未入暂存区）。
-**提交指令交人工执行**：`08_git_commands.md`。
+| 项 | 说明 |
+|---|---|
+| 为什么改 | 本模块不只做分离 —— 定位是**音频前后处理**（分离 · 降噪 · 去环境音 · 音质优化），旧名把范围写窄了 |
+| 改了什么 | 仓库 / 目录、分发名、包名、门面文件名与类名、配置类、异常基类、配置文件、CLI 名、环境变量前缀、开发 skill（映射表见 `PROJECT_MEMORY.md §改名重构`） |
+| 没改什么 | 语义本就属于「分离」的符号：`SeparationMode` / `SeparationResult` / `SeparationEngine` / `StemOrderError` / `SEPARATION_SR` / `separate()` / `POST /separate`；三个模式与模型的映射、四级轨道判定、等长与不归一化三条硬约束**一条都没动** |
+| 功能范围 | 本轮**只改名与扩定位**；降噪 / 去环境音 / 音质优化**未实现**，版图见 `10_audio_processing_roadmap.md` |
+| 兼容性 | **破坏性**：CLI 由 `separate` 变 `audio`，包名与 `SEPARATE_*` 环境变量都变了；改名后必须重装 editable 包（旧 egg-info 指向旧包名）。本机无 `.env`，无凭据迁移成本 |
+| 跨模组 | **不牵连任何其它模组**：按守则 §七，模组之间不许互相引用；本轮顺手清掉了本仓库里对其它模组的直接引用（对方的 issue / 设计正文 / 可照抄的调用示例），只保留「由应用层组合」这类关系说明 |
+| 需要人工做 | `11_git_commands_rename.md`（分 3 组提交，**不涉及其它仓库**） |
+| 验证 | 离线测试全绿（数字现跑）；`audio version` / `audio doctor` 正常；`tools/check.py` 的 ruff 段另有既有问题，见 `issues/006` |
+
+---
+
+## 7 · 状态
+
+分离功能的开发、测试、文档均已完成；**本轮改名重构已完成，待人工提交**
+（`git status` 应显示重命名 + 修改 + 新文档）。
+**提交指令**：本轮 `11_git_commands_rename.md`，首轮留档 `08_git_commands.md`。

@@ -1,9 +1,9 @@
 ---
-name: agentic-separate-dev
-description: Agentic_VoiceSeparate_Module 开发约定 —— 三个模式与模型的映射、轨道顺序判定、等长校验、测试与提交纪律。改这个项目的代码前先读。
+name: agentic-audioprocess-dev
+description: Agentic_AudioProcess_Module 开发约定 —— 三个模式与模型的映射、轨道顺序判定、等长校验、测试与提交纪律。改这个项目的代码前先读。
 ---
 
-# Agentic_VoiceSeparate_Module 开发 skill
+# Agentic_AudioProcess_Module 开发 skill
 
 ## 三个模式，三套模型（这是本插件存在的理由）
 
@@ -22,7 +22,7 @@ description: Agentic_VoiceSeparate_Module 开发约定 —— 三个模式与模
 
 ```
 用法层  cli.py / server/ / gui/     三者调用同一个门面
-门面层  SeparateModule (separate.py)  解码归一 · 轨道顺序判定 · 等长校验 · 落盘命名
+门面层  AudioProcessModule (audioprocess.py)  解码归一 · 轨道顺序判定 · 等长校验 · 落盘命名
 引擎层  engines/*                    唯一必实现：separate(chunk, mode) -> {轨名: 波形}
 ```
 

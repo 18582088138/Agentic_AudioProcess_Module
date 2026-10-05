@@ -6,10 +6,14 @@
 
 ## 1 · 一句话定位
 
-> **输入音频或视频，输出分离好的音轨：人声、背景音、或「去掉主体人声后」的结果。**
-> Audio/video in; separated stems out.
+> **输入音频或视频，输出能直接用的处理结果：分离好的音轨、降噪后的语音、修复过的音质。**
+> Audio/video in; processed audio out.
 
-**不做**：转写、字幕、翻译、配音合成（那是 `Agentic_ASR_Module` 与 TTS 的事）。
+本模块的定位是**音频前后处理**：分离（**已实现**）· 降噪 · 去环境音 · 音质优化。
+后三者的版图、候选方案与验收口径见 `10_audio_processing_roadmap.md`（**尚未实现**，
+不要按已完成来写代码或文档）。
+
+**不做**：转写、字幕、翻译、配音合成 —— 需要这些时由**应用层**组合其它模组。
 
 | 功能 | 入口 | 用什么模型 | 输出 |
 |---|---|---|---|
@@ -40,7 +44,7 @@
 
 ```
 ┌─ 用法层 ──  cli.py   server/   gui/       三者调用同一个门面，接口一一对应
-├─ 门面层 ──  SeparateModule (separate.py)
+├─ 门面层 ──  AudioProcessModule (audioprocess.py)
 │              · 解码归一（任意容器 → 44.1 kHz 立体声）
 │              · 轨道顺序判定（哪条是主体人声）
 │              · 等长校验 · 落盘命名 · 模式路由 · 能力检查
@@ -51,11 +55,11 @@
 
 **为什么引擎接口要窄**：解码、轨道判定、等长校验、命名、模式语义**与引擎无关**。
 下沉到各引擎就会出现 N 份互相不一致的实现（同一段音频换个引擎得到不同轨名/长度，
-调试时看不出是哪一份在起作用）。与 `Agentic_ASR_Module` 是同一个取舍。
+调试时看不出是哪一份在起作用）。
 
-**为什么与 ASR 引擎分成两套平级抽象**：两者能力正交 ——
-一个答「这段音频里哪些是人声」，一个答「这段音频说了什么」。
-硬合并会让能力表无法表达（云端 ASR 能转写但做不了分离，分离模型能分轨但不认识字）。
+**为什么引擎之间是平级的**：能力正交 —— 一个答「这段音频里哪些是人声」，
+另一个可能答「这段音频说了什么」。硬合并成一张能力表反而表达不了
+（有的模型能做转写做不了分离，有的能分轨但不认识字）。
 
 ---
 
@@ -103,7 +107,7 @@ class SeparationEngine(ABC):
 | 能量（rms） | 「人声 + 背景音乐」素材里，**音乐轨 0.1533 > 人声轨 0.1114** |
 | VAD 语音占比 | 「人声 + 背景人声 + 音乐」素材里，**含音乐轨 0.914 > 人声轨 0.7624** |
 
-第二条是跨插件联调时抓到的：背景音乐被 VAD 当成语音，判定方向整个反了 ——
+第二条是端到端联调时抓到的：背景音乐被 VAD 当成语音，判定方向整个反了 ——
 「去掉主体人声」变成了「去掉背景人声」。详见 `issues/005`。
 
 ### 4.2 等长校验
@@ -124,13 +128,13 @@ class SeparationEngine(ABC):
 ## 5 · 目录结构
 
 ```
-agentic_separate/
+agentic_audioprocess/
   core/       config.py types.py errors.py logging.py
   audio/      io.py（44.1k 立体声归一）  vad.py（语音占比，轨道判定用）
   engines/    base.py uvr.py null.py
-  separate.py 门面 SeparateModule
+  audioprocess.py 门面 AudioProcessModule
   server/ gui/ cli.py
-configs/separate.yaml    models/（gitignore）    outputs/（gitignore）
+configs/audioprocess.yaml    models/（gitignore）    outputs/（gitignore）
 docs/  tests/  tools/check.py
 ```
 
@@ -140,12 +144,12 @@ docs/  tests/  tools/check.py
 
 | 功能 | 库 | CLI | HTTP |
 |---|---|---|---|
-| 体检 | `module.doctor()` | `separate doctor` | `GET /doctor` |
-| 引擎表 | `module.engines()` | `separate engines` | `GET /engines` |
-| ① 人声提取 | `extract_vocals()` | `separate vocals <media>` | `POST /vocals` |
-| ② 背景音提取 | `extract_accompaniment()` | `separate accompaniment <media>` | `POST /accompaniment` |
-| ③ 主体人声去除 | `remove_lead_vocal()` | `separate lead-removal <media>` | `POST /lead-removal` |
-| 通用入口 | `separate(mode=…)` | `separate run <media> --mode …` | `POST /separate` |
+| 体检 | `module.doctor()` | `audio doctor` | `GET /doctor` |
+| 引擎表 | `module.engines()` | `audio engines` | `GET /engines` |
+| ① 人声提取 | `extract_vocals()` | `audio vocals <media>` | `POST /vocals` |
+| ② 背景音提取 | `extract_accompaniment()` | `audio accompaniment <media>` | `POST /accompaniment` |
+| ③ 主体人声去除 | `remove_lead_vocal()` | `audio lead-removal <media>` | `POST /lead-removal` |
+| 通用入口 | `separate(mode=…)` | `audio run <media> --mode …` | `POST /separate` |
 
 **每个功能都是独立 endpoint / 独立 GUI 面板**，可单独调用，不要求走完整流水线。
 
@@ -160,7 +164,7 @@ docs/  tests/  tools/check.py
 | V3 | **各轨与输入严格等长** | 断言样本数一致、可解码、采样率一致 |
 | V4 | **轨道判定可解释** | 断言 `stem_order_resolved_by` 非空；`lead_stem_index` 生效 |
 | V5 | **主体/背景确实分开了** | `-m real`：断言 KARA 的两条轨**都不是静音**（退化则背景轨接近静音） |
-| V6 | 未知模式被拒 | 断言抛 `SeparateError` / HTTP 422 |
+| V6 | 未知模式被拒 | 断言抛 `AudioProcessError` / HTTP 422 |
 | V7 | 下载端点不越权 | 断言 outputs 之外的文件拿不到 |
 
 V1–V4、V6、V7 离线可验；V5 需要真实权重（`-m real`，约 30 秒）。

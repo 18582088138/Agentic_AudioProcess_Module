@@ -9,7 +9,7 @@
 
 ## 1 · 四步 / four steps
 
-### ① 建文件 `agentic_separate/engines/mysep.py`
+### ① 建文件 `agentic_audioprocess/engines/mysep.py`
 
 最小骨架（可直接改名起用）：
 
@@ -25,9 +25,9 @@ from typing import Any
 
 import numpy as np
 
-from agentic_separate.core.errors import EngineError, ModelMissingError
-from agentic_separate.core.types import AudioChunk, SeparationMode
-from agentic_separate.engines.base import (
+from agentic_audioprocess.core.errors import EngineError, ModelMissingError
+from agentic_audioprocess.core.types import AudioChunk, SeparationMode
+from agentic_audioprocess.engines.base import (
     ACCOMPANIMENT,
     VOCALS,
     SeparationEngine,
@@ -98,13 +98,13 @@ class MyEngine(SeparationEngine):
 
 ### ② 登记到注册表
 
-`agentic_separate/engines/__init__.py`：
+`agentic_audioprocess/engines/__init__.py`：
 
 ```python
 ENGINES: dict[str, str] = {
-    "uvr": "agentic_separate.engines.uvr:UvrEngine",
-    "null": "agentic_separate.engines.null:NullEngine",
-    "myengine": "agentic_separate.engines.mysep:MyEngine",   # ← 加这行
+    "uvr": "agentic_audioprocess.engines.uvr:UvrEngine",
+    "null": "agentic_audioprocess.engines.null:NullEngine",
+    "myengine": "agentic_audioprocess.engines.mysep:MyEngine",   # ← 加这行
 }
 ```
 
@@ -113,11 +113,11 @@ sherpa-onnx 拉进来（那要几秒）。所以**不要在 `__init__.py` 顶部
 
 ### ③ 配置里选它
 
-`configs/separate.yaml`：
+`configs/audioprocess.yaml`：
 
 ```yaml
 engine:
-  default: myengine        # 或临时用 SeparateModule(engine="myengine")
+  default: myengine        # 或临时用 AudioProcessModule(engine="myengine")
 ```
 
 如果新引擎需要**按模式加载不同权重**，把它加进 `models` 映射（门面的
@@ -200,7 +200,7 @@ self.require(mode)      # 一行，别省
 其中**模型约定表**按**权重文件名**查：
 
 ```python
-# agentic_separate/separate.py
+# agentic_audioprocess/audioprocess.py
 _MODEL_LEAD_INDEX = {
     "UVR_MDXNET_KARA.onnx": 0,      # 实测：stem0 = 主体
     "UVR_MDXNET_KARA_2.onnx": 1,    # 实测：stem1 = 主体，与 KARA 相反
